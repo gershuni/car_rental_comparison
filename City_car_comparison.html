@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Price Comparison</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        input {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Car Price Comparison</h1>
+        <p>Enter the number of hours and kilometers to calculate the cost for each car:</p>
+
+        <label for="hours">Number of Hours:</label>
+        <input type="number" id="hours" placeholder="Enter hours" oninput="calculate()">
+
+        <label for="kilometers">Number of Kilometers:</label>
+        <input type="number" id="kilometers" placeholder="Enter kilometers" oninput="calculate()">
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Car</th>
+                    <th>Per Hour</th>
+                    <th>Extra 7</th>
+                    <th>Daily</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Citroen C3 (5 seats)</td>
+                    <td id="c3PerHour">-</td>
+                    <td id="c3Extra7">-</td>
+                    <td id="c3Daily">-</td>
+                </tr>
+                <tr>
+                    <td>Peugeot 5008 (7 seats)</td>
+                    <td id="p5008PerHour">-</td>
+                    <td id="p5008Extra7">-</td>
+                    <td id="p5008Daily">-</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function calculate() {
+            const hours = parseFloat(document.getElementById("hours").value) || 0;
+            const kilometers = parseFloat(document.getElementById("kilometers").value) || 0;
+
+            // Prices for Citroen C3
+            const c3HourlyRate = 14;
+            const c3PerKmRate = 1.5;
+            let c3PerHourCost = (hours * c3HourlyRate) + (kilometers * c3PerKmRate);
+            let c3Extra7Cost;
+            const extra7BaseC3 = 120;
+            if (hours > 0) {
+                const extraHours = Math.max(0, hours - 7);
+                c3Extra7Cost = extra7BaseC3 + (extraHours * c3HourlyRate) + (kilometers * 1);
+            } else {
+                c3Extra7Cost = "Not Applicable";
+            }
+            let c3DailyCost;
+            const dailyBaseC3 = 170;
+            if (hours > 0) {
+                c3DailyCost = dailyBaseC3 + (kilometers * 1);
+            } else {
+                c3DailyCost = "Not Applicable";
+            }
+
+            // Prices for Peugeot 5008
+            const p5008HourlyRate = 25;
+            const p5008PerKmRate = 2;
+            let p5008PerHourCost = (hours * p5008HourlyRate) + (kilometers * p5008PerKmRate);
+            let p5008Extra7Cost;
+            const extra7BaseP5008 = 180;
+            if (hours > 0) {
+                const extraHours = Math.max(0, hours - 7);
+                p5008Extra7Cost = extra7BaseP5008 + (extraHours * p5008HourlyRate) + (kilometers * 1.7);
+            } else {
+                p5008Extra7Cost = "Not Applicable";
+            }
+            let p5008DailyCost;
+            const dailyBaseP5008 = 250;
+            if (hours > 0) {
+                p5008DailyCost = dailyBaseP5008 + (kilometers * 1.7);
+            } else {
+                p5008DailyCost = "Not Applicable";
+            }
+
+            // Update the table dynamically
+            document.getElementById("c3PerHour").textContent = c3PerHourCost.toFixed(2) + " ₪";
+            document.getElementById("c3Extra7").textContent = typeof c3Extra7Cost === "string" ? c3Extra7Cost : c3Extra7Cost.toFixed(2) + " ₪";
+            document.getElementById("c3Daily").textContent = typeof c3DailyCost === "string" ? c3DailyCost : c3DailyCost.toFixed(2) + " ₪";
+            document.getElementById("p5008PerHour").textContent = p5008PerHourCost.toFixed(2) + " ₪";
+            document.getElementById("p5008Extra7").textContent = typeof p5008Extra7Cost === "string" ? p5008Extra7Cost : p5008Extra7Cost.toFixed(2) + " ₪";
+            document.getElementById("p5008Daily").textContent = typeof p5008DailyCost === "string" ? p5008DailyCost : p5008DailyCost.toFixed(2) + " ₪";
+        }
+    </script>
+</body>
+</html>
