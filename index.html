@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>השוואת מחירי רכבים</title>
+    <title>השוואת מחירי השכרת רכב - בית אל</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,13 +12,14 @@
             text-align: right;
         }
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: auto;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         table, th, td {
             border: 1px solid #ddd;
@@ -36,12 +37,35 @@
             width: 100%;
             box-sizing: border-box;
         }
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-title img {
+            height: 40px;
+            border-radius: 8px;
+        }
+        .highlight-lowest {
+            background-color: #d4edda;
+            font-weight: bold;
+        }
+        .highlight-second {
+            background-color: #fff3cd;
+        }
+        .highlight-third {
+            background-color: #f8d7da;
+        }
+        .link {
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>השוואת מחירי רכבים</h1>
-        <p>הכנס את מספר השעות והקילומטרים לחישוב עלות עבור כל רכב:</p>
+        <h1>השוואת מחירי השכרת רכב - בית אל</h1>
+
+        <p>הכניסו את מספר השעות והקילומטרים לחישוב עלות השכרה עבור כל רכב:</p>
 
         <label for="hours">מספר שעות:</label>
         <input type="number" id="hours" placeholder="הכנס שעות" oninput="calculate()">
@@ -49,6 +73,10 @@
         <label for="kilometers">מספר קילומטרים:</label>
         <input type="number" id="kilometers" placeholder="הכנס קילומטרים" oninput="calculate()">
 
+        <div class="section-title">
+            <img src="https://upload.wikimedia.org/wikipedia/he/5/5b/%D7%A1%D7%99%D7%98%D7%99_%D7%A7%D7%90%D7%A8.jpg" alt="סיטיקאר">
+            <h2>סיטיקאר</h2>
+        </div>
         <table>
             <thead>
                 <tr>
@@ -70,6 +98,30 @@
                     <td id="p5008PerHour">-</td>
                     <td id="p5008Extra7">-</td>
                     <td id="p5008Daily">-</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="section-title">
+            <img src="https://scontent.ftlv27-1.fna.fbcdn.net/v/t39.30808-6/326583830_1613826935744069_8385897178138453675_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=0iJBE7ieZhoQ7kNvgHfTQny&_nc_zt=23&_nc_ht=scontent.ftlv27-1.fna&_nc_gid=AbzivqwEpGbLKPAPGc1OGNF&oh=00_AYA1_GHLw-KC0h45tNYlWwkSOzM3pbfbKUwnp_Y0mNvwQw&oe=6781E1F5" alt="מיטב">
+            <h2>רכב קטן - מיטב</h2>
+        </div>
+        <p style="font-size: 0.9em; color: gray;">(משוער - תלוי בעלות התדלוק; מחושב לפי עלות תדלוק של 45 אג' לק"מ)</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>אפשרות</th>
+                    <th>עלות</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>עד 5 שעות</td>
+                    <td id="smallCarUpTo5Hours">-</td>
+                </tr>
+                <tr>
+                    <td>יומי</td>
+                    <td id="smallCarDaily">-</td>
                 </tr>
             </tbody>
         </table>
@@ -120,13 +172,55 @@
                 p5008DailyCost = "לא זמין";
             }
 
-            // עדכון הטבלה בצורה דינמית
-            document.getElementById("c3PerHour").textContent = c3PerHourCost.toFixed(2) + " ₪";
-            document.getElementById("c3Extra7").textContent = typeof c3Extra7Cost === "string" ? c3Extra7Cost : c3Extra7Cost.toFixed(2) + " ₪";
-            document.getElementById("c3Daily").textContent = typeof c3DailyCost === "string" ? c3DailyCost : c3DailyCost.toFixed(2) + " ₪";
-            document.getElementById("p5008PerHour").textContent = p5008PerHourCost.toFixed(2) + " ₪";
-            document.getElementById("p5008Extra7").textContent = typeof p5008Extra7Cost === "string" ? p5008Extra7Cost : p5008Extra7Cost.toFixed(2) + " ₪";
-            document.getElementById("p5008Daily").textContent = typeof p5008DailyCost === "string" ? p5008DailyCost : p5008DailyCost.toFixed(2) + " ₪";
+            // מחירים לרכב קטן - מיטב
+            let smallCarUpTo5HoursCost;
+            if (hours <= 5) {
+                const extraKm = Math.max(0, kilometers - 200);
+                smallCarUpTo5HoursCost = 180 + (extraKm * 1.2) + (kilometers * 0.45);
+            } else {
+                smallCarUpTo5HoursCost = "לא זמין";
+            }
+            let smallCarDailyCost;
+            if (hours > 0) {
+                const extraKm = Math.max(0, kilometers - 250);
+                smallCarDailyCost = 230 + (extraKm * 1.2) + (kilometers * 0.45);
+            } else {
+                smallCarDailyCost = "לא זמין";
+            }
+
+            const allPrices = [
+                { element: document.getElementById("c3PerHour"), value: c3PerHourCost },
+                { element: document.getElementById("c3Extra7"), value: c3Extra7Cost },
+                { element: document.getElementById("c3Daily"), value: c3DailyCost },
+                { element: document.getElementById("p5008PerHour"), value: p5008PerHourCost },
+                { element: document.getElementById("p5008Extra7"), value: p5008Extra7Cost },
+                { element: document.getElementById("p5008Daily"), value: p5008DailyCost },
+                { element: document.getElementById("smallCarUpTo5Hours"), value: smallCarUpTo5HoursCost },
+                { element: document.getElementById("smallCarDaily"), value: smallCarDailyCost }
+            ];
+
+            allPrices.forEach(item => {
+                if (typeof item.value === "number") {
+                    item.element.textContent = item.value.toFixed(2) + " ₪";
+                } else {
+                    item.element.textContent = item.value;
+                }
+                item.element.classList.remove("highlight-lowest", "highlight-second", "highlight-third");
+            });
+
+            const validPrices = allPrices.filter(item => typeof item.value === "number");
+            validPrices.sort((a, b) => a.value - b.value);
+
+            if (validPrices.length > 0) {
+                validPrices[0].element.classList.add("highlight-lowest");
+            }
+
+            if (validPrices.length > 1) {
+                validPrices.forEach((item, index) => {
+                    if (index === 1) item.element.classList.add("highlight-second");
+                    if (index === 2) item.element.classList.add("highlight-third");
+                });
+            }
         }
     </script>
 </body>
