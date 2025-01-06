@@ -1,18 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Car Price Comparison</title>
+    <title>השוואת מחירי רכבים</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
+            direction: rtl;
+            text-align: right;
         }
         .container {
             max-width: 600px;
             margin: auto;
-            text-align: center;
         }
         table {
             width: 100%;
@@ -39,33 +40,33 @@
 </head>
 <body>
     <div class="container">
-        <h1>Car Price Comparison</h1>
-        <p>Enter the number of hours and kilometers to calculate the cost for each car:</p>
+        <h1>השוואת מחירי רכבים</h1>
+        <p>הכנס את מספר השעות והקילומטרים לחישוב עלות עבור כל רכב:</p>
 
-        <label for="hours">Number of Hours:</label>
-        <input type="number" id="hours" placeholder="Enter hours" oninput="calculate()">
+        <label for="hours">מספר שעות:</label>
+        <input type="number" id="hours" placeholder="הכנס שעות" oninput="calculate()">
 
-        <label for="kilometers">Number of Kilometers:</label>
-        <input type="number" id="kilometers" placeholder="Enter kilometers" oninput="calculate()">
+        <label for="kilometers">מספר קילומטרים:</label>
+        <input type="number" id="kilometers" placeholder="הכנס קילומטרים" oninput="calculate()">
 
         <table>
             <thead>
                 <tr>
-                    <th>Car</th>
-                    <th>Per Hour</th>
-                    <th>Extra 7</th>
-                    <th>Daily</th>
+                    <th>רכב</th>
+                    <th>לפי שעה</th>
+                    <th>אקסטרה 7</th>
+                    <th>יומי</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>Citroen C3 (5 seats)</td>
+                    <td>סיטרואן C3 (5 מקומות)</td>
                     <td id="c3PerHour">-</td>
                     <td id="c3Extra7">-</td>
                     <td id="c3Daily">-</td>
                 </tr>
                 <tr>
-                    <td>Peugeot 5008 (7 seats)</td>
+                    <td>פיג'ו 5008 (7 מקומות)</td>
                     <td id="p5008PerHour">-</td>
                     <td id="p5008Extra7">-</td>
                     <td id="p5008Daily">-</td>
@@ -79,7 +80,7 @@
             const hours = parseFloat(document.getElementById("hours").value) || 0;
             const kilometers = parseFloat(document.getElementById("kilometers").value) || 0;
 
-            // Prices for Citroen C3
+            // מחירים לסיטרואן C3
             const c3HourlyRate = 14;
             const c3PerKmRate = 1.5;
             let c3PerHourCost = (hours * c3HourlyRate) + (kilometers * c3PerKmRate);
@@ -89,17 +90,17 @@
                 const extraHours = Math.max(0, hours - 7);
                 c3Extra7Cost = extra7BaseC3 + (extraHours * c3HourlyRate) + (kilometers * 1);
             } else {
-                c3Extra7Cost = "Not Applicable";
+                c3Extra7Cost = "לא זמין";
             }
             let c3DailyCost;
             const dailyBaseC3 = 170;
             if (hours > 0) {
                 c3DailyCost = dailyBaseC3 + (kilometers * 1);
             } else {
-                c3DailyCost = "Not Applicable";
+                c3DailyCost = "לא זמין";
             }
 
-            // Prices for Peugeot 5008
+            // מחירים לפיג'ו 5008
             const p5008HourlyRate = 25;
             const p5008PerKmRate = 2;
             let p5008PerHourCost = (hours * p5008HourlyRate) + (kilometers * p5008PerKmRate);
@@ -109,17 +110,17 @@
                 const extraHours = Math.max(0, hours - 7);
                 p5008Extra7Cost = extra7BaseP5008 + (extraHours * p5008HourlyRate) + (kilometers * 1.7);
             } else {
-                p5008Extra7Cost = "Not Applicable";
+                p5008Extra7Cost = "לא זמין";
             }
             let p5008DailyCost;
             const dailyBaseP5008 = 250;
             if (hours > 0) {
                 p5008DailyCost = dailyBaseP5008 + (kilometers * 1.7);
             } else {
-                p5008DailyCost = "Not Applicable";
+                p5008DailyCost = "לא זמין";
             }
 
-            // Update the table dynamically
+            // עדכון הטבלה בצורה דינמית
             document.getElementById("c3PerHour").textContent = c3PerHourCost.toFixed(2) + " ₪";
             document.getElementById("c3Extra7").textContent = typeof c3Extra7Cost === "string" ? c3Extra7Cost : c3Extra7Cost.toFixed(2) + " ₪";
             document.getElementById("c3Daily").textContent = typeof c3DailyCost === "string" ? c3DailyCost : c3DailyCost.toFixed(2) + " ₪";
