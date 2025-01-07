@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>השוואת מחירי השכרת רכב - סיטיקאר / מיטב</title>
+    <title>השוואת מחירי השכרת רכב - סיטיקאר/מיטב</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -32,13 +32,13 @@
             background-color: #f4f4f4;
         }
         input {
-            padding: 10px;
+             padding: 10px;
             margin: 10px 0;
-            width: calc(50% - 10px); /* Adjust for spacing */
-            box-sizing: border-box;
+           width: calc(33% - 10px); /* Adjust for spacing */
+           box-sizing: border-box;
             display: inline-block;
         }
-         .input-container {
+           .input-container {
             display: flex;
             gap: 10px; /* Space between input groups */
              align-items: center;
@@ -87,11 +87,14 @@
           .toggle-button span {
             pointer-events: none; /* Prevent text from interfering with clicks */
         }
+         #additionalCarsButton {
+            margin-top: 10px; /* Add some spacing above the button */
+        }
     </style>
 </head>
-<body>
+<body onload="initialSetup()">
     <div class="container">
-        <h1>השוואת מחירי השכרת רכב - סיטיקאר / מיטב</h1>
+        <h1>השוואת מחירי השכרת רכב - סיטיקאר/מיטב</h1>
 
         <p>הכניסו את מספר הימים/שעות והקילומטרים לחישוב עלות השכרה עבור כל רכב:</p>
         
@@ -104,13 +107,10 @@
 
         <label for="days" id="daysLabel" class="hidden-cell">מספר ימים:</label>
         <input type="number" id="days" placeholder="הכנס ימים" oninput="calculate()" class="hidden-cell">
-    </div>
-         <label for="kilometers">מספר קילומטרים:</label>
+  <label for="kilometers">מספר קילומטרים:</label>
         <input type="number" id="kilometers" placeholder="הכנס קילומטרים" oninput="calculate()">
-        
-        <button onclick="toggleAdditionalCars()">רכבים נוספים</button>
-
-
+       </div>
+      
         <div class="section-title">
             <img src="https://upload.wikimedia.org/wikipedia/he/5/5b/%D7%A1%D7%99%D7%98%D7%99_%D7%A7%D7%90%D7%A8.jpg" alt="סיטיקאר">
             <h2>סיטיקאר</h2>
@@ -161,6 +161,7 @@
               </tr>
             </tbody>
         </table>
+        <button id="additionalCarsButton" onclick="toggleAdditionalCars()">רכבים נוספים</button>
 
         <div class="section-title">
             <img src="https://scontent.ftlv27-1.fna.fbcdn.net/v/t39.30808-6/326583830_1613826935744069_8385897178138453675_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=0iJBE7ieZhoQ7kNvgHfTQny&_nc_zt=23&_nc_ht=scontent.ftlv27-1.fna&_nc_gid=AbzivqwEpGbLKPAPGc1OGNF&oh=00_AYA1_GHLw-KC0h45tNYlWwkSOzM3pbfbKUwnp_Y0mNvwQw&oe=6781E1F5" alt="מיטב">
@@ -202,6 +203,10 @@
                 row2.classList.add("hidden-row");
             }
             calculate(); // Recalculate prices when visibility changes
+        }
+          function initialSetup() {
+             const dailyCells = document.querySelectorAll('.daily-cell');
+              dailyCells.forEach(cell => cell.classList.add("hidden-cell"));
         }
         function toggleDailyMode() {
             dailyModeActive = !dailyModeActive;
