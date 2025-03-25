@@ -31,27 +31,35 @@
         th {
             background-color: #f4f4f4;
         }
-        input {
+        input[type="number"] {
              padding: 10px;
             margin: 10px 0;
-           width: calc(33% - 10px); /* Adjust for spacing */
+           width: calc(50% - 10px); /* Adjust for spacing - now two inputs */
            box-sizing: border-box;
             display: inline-block;
+        }
+        input[type="checkbox"] {
+            margin-left: 5px;
         }
            .input-container {
             display: flex;
             gap: 10px; /* Space between input groups */
              align-items: center;
+             flex-wrap: wrap;
         }
+          .input-container > * {
+            flex: 1 1 calc(50% - 10px); /* Each item takes up half the width, minus gap*/
+            min-width: 150px; /* Prevent inputs from becoming too small */
+        }
+
         .section-title {
             display: flex;
             align-items: center;
+            justify-content: center; /* Center the title */
             gap: 10px;
+            margin-bottom: 10px;
         }
-        .section-title img {
-            height: 40px;
-            border-radius: 8px;
-        }
+
         .highlight-lowest {
             background-color: #d4edda;
             font-weight: bold;
@@ -71,100 +79,132 @@
         .hidden-cell {
             display: none;
         }
-        .toggle-button {
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            padding: 8px 15px;
-            cursor: pointer;
-            display: inline-block;
-            margin-bottom: 10px;
-        }
-        .toggle-button.active {
-            background-color: #e0f7e5; /* Light green when active */
-            border-color: #a5d6a7; /* Darker green border when active */
-        }
-          .toggle-button span {
-            pointer-events: none; /* Prevent text from interfering with clicks */
-        }
+
          #additionalCarsButton {
             margin-top: 10px; /* Add some spacing above the button */
         }
+           .price-container {
+            position: relative; /* חשוב כדי שהמיקום האבסולוטי יעבוד נכון */
+            text-align: center;
+        }
+
+        .formula {
+            font-size: 0.7em; /* גודל גופן קטן */
+            color: gray;      /* צבע אפור (אופציונלי) */
+            position: absolute; /* מיקום אבסולוטי מעל המחיר */
+            top: 2px;         /* התאמת מיקום - שחק עם זה */
+            left: 50%;        /* מרכוז אופקי */
+             transform: translateX(-50%); /* מרכוז מדויק */
+              width: 100%; /* נוסף כדי למנוע גלישה */
+            white-space: nowrap; /* נוסף כדי שהנוסחה תישאר בשורה אחת */
+            overflow: hidden; /* נוסף כדי שהנוסחה תישאר בשורה אחת */
+            text-overflow: ellipsis; /* נוסף כדי שהנוסחה תישאר בשורה אחת */
+
+        }
+
+        .price {
+            padding-top: 1.5em; /* מרווח מעל המחיר כדי לפנות מקום לנוסחה */
+        }
+        #seasonCheckboxContainer {
+            margin-top: 10px;
+            text-align: center;
+        }
     </style>
 </head>
-<body onload="initialSetup()">
+<body>
     <div class="container">
         <h1>השוואת מחירי השכרת רכב - סיטיקאר/מיטב</h1>
 
-        <p>הכניסו את מספר הימים/שעות והקילומטרים לחישוב עלות השכרה עבור כל רכב:</p>
-        
-      <div class="toggle-button" id="dailyModeButton" onclick="toggleDailyMode()">
-            <span id="dailyModeText">חישוב לפי שעות</span>
-        </div>
+        <p>הכניסו את מספר השעות והקילומטרים לחישוב עלות השכרה עבור כל רכב:</p>
+
     <div class="input-container">
-        <label for="hours" id="hoursLabel">מספר שעות:</label>
+        <label for="hours">מספר שעות:</label>
         <input type="number" id="hours" placeholder="הכנס שעות" oninput="calculate()">
 
-        <label for="days" id="daysLabel" class="hidden-cell">מספר ימים:</label>
-        <input type="number" id="days" placeholder="הכנס ימים" oninput="calculate()" class="hidden-cell">
   <label for="kilometers">מספר קילומטרים:</label>
         <input type="number" id="kilometers" placeholder="הכנס קילומטרים" oninput="calculate()">
        </div>
-      
+         <div id="seasonCheckboxContainer">
+              <label for="seasonCheckbox">תוספת עונה? (6/4-26/4)</label>
+            <input type="checkbox" id="seasonCheckbox" onchange="calculate()">
+        </div>
         <div class="section-title">
-            <img src="https://upload.wikimedia.org/wikipedia/he/5/5b/%D7%A1%D7%99%D7%98%D7%99_%D7%A7%D7%90%D7%A8.jpg" alt="סיטיקאר">
-            <h2>סיטיקאר</h2>
+            <h2><a href="https://www.citycar.co.il/price_list_screen" target="_blank">סיטיקאר</a></h2>
         </div>
         <table>
             <thead>
                 <tr>
                     <th>רכב</th>
-                    <th class="hourly-cell">לפי שעה</th>
-                    <th class="extra7-cell">אקסטרה 7</th>
+                    <th>לפי שעה</th>
                     <th>יומי</th>
-                       <th class="daily-cell">שבועי</th>
-                     <th class="daily-cell">חודשי</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td>סיטרואן C3 (5 מקומות)</td>
-                    <td id="c3PerHour" class="hourly-cell">-</td>
-                    <td id="c3Extra7" class="extra7-cell">-</td>
-                    <td id="c3Daily">-</td>
-                    <td id="c3Weekly" class="daily-cell">-</td>
-                    <td id="c3Monthly" class="daily-cell">-</td>
+                    <td id="c3PerHour">
+                        <div class="price-container">
+                            <div class="formula"></div>
+                            <div class="price">-</div>
+                        </div>
+                    </td>
+                    <td id="c3Daily">
+                        <div class="price-container">
+                            <div class="formula"></div>
+                            <div class="price">-</div>
+                        </div>
+                    </td>
                 </tr>
                 <tr>
                     <td>פיג'ו 5008 (7 מקומות)</td>
-                    <td id="p5008PerHour" class="hourly-cell">-</td>
-                    <td id="p5008Extra7" class="extra7-cell">-</td>
-                    <td id="p5008Daily">-</td>
-                      <td id="p5008Weekly" class="daily-cell">-</td>
-                     <td id="p5008Monthly" class="daily-cell">-</td>
+                     <td id="p5008PerHour">
+                        <div class="price-container">
+                            <div class="formula"></div>
+                            <div class="price">-</div>
+                        </div>
+                    </td>
+                    <td id="p5008Daily">
+                        <div class="price-container">
+                            <div class="formula"></div>
+                            <div class="price">-</div>
+                        </div>
+                    </td>
                 </tr>
                 <tr class="hidden-row" id="additionalCarsRow1">
                   <td>ניסאן מיקרה</td>
-                  <td id="nissanMicraPerHour" class="hourly-cell">-</td>
-                  <td id="nissanMicraExtra7" class="extra7-cell">-</td>
-                  <td id="nissanMicraDaily">-</td>
-                     <td id="nissanMicraWeekly" class="daily-cell">-</td>
-                    <td id="nissanMicraMonthly" class="daily-cell">-</td>
+                  <td id="nissanMicraPerHour">
+                    <div class="price-container">
+                        <div class="formula"></div>
+                        <div class="price">-</div>
+                    </div>
+                  </td>
+                  <td id="nissanMicraDaily">
+                    <div class="price-container">
+                        <div class="formula"></div>
+                        <div class="price">-</div>
+                    </div>
+                  </td>
                 </tr>
                   <tr class="hidden-row" id="additionalCarsRow2">
                     <td>פיקנטו/ספייס סטאר/i10</td>
-                  <td id="picantoPerHour" class="hourly-cell">-</td>
-                    <td id="picantoExtra7" class="extra7-cell">-</td>
-                  <td id="picantoDaily">-</td>
-                       <td id="picantoWeekly" class="daily-cell">-</td>
-                    <td id="picantoMonthly" class="daily-cell">-</td>
+                  <td id="picantoPerHour">
+                    <div class="price-container">
+                        <div class="formula"></div>
+                        <div class="price">-</div>
+                    </div>
+                  </td>
+                  <td id="picantoDaily">
+                    <div class="price-container">
+                        <div class="formula"></div>
+                        <div class="price">-</div>
+                    </div>
+                  </td>
               </tr>
             </tbody>
         </table>
         <button id="additionalCarsButton" onclick="toggleAdditionalCars()">רכבים נוספים</button>
 
         <div class="section-title">
-            <img src="https://scontent.ftlv27-1.fna.fbcdn.net/v/t39.30808-6/326583830_1613826935744069_8385897178138453675_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=0iJBE7ieZhoQ7kNvgHfTQny&_nc_zt=23&_nc_ht=scontent.ftlv27-1.fna&_nc_gid=AbzivqwEpGbLKPAPGc1OGNF&oh=00_AYA1_GHLw-KC0h45tNYlWwkSOzM3pbfbKUwnp_Y0mNvwQw&oe=6781E1F5" alt="מיטב">
             <h2>רכב קטן - מיטב</h2>
         </div>
         <p style="font-size: 0.9em; color: gray;">(משוער - תלוי בעלות התדלוק; מחושב לפי עלות תדלוק של 45 אג' לק"מ. שימו לב! תחויבו בתוספת 50 ש"ח על ביטול השתתפות עצמית אם לא תבקשו במפורש לפני ההזמנה!)</p>
@@ -178,11 +218,21 @@
             <tbody>
                 <tr>
                     <td class="upto5-cell">עד 5 שעות</td>
-                    <td id="smallCarUpTo5Hours" class="upto5-cell">-</td>
+                    <td id="smallCarUpTo5Hours">
+                        <div class="price-container">
+                            <div class="formula"></div>
+                            <div class="price">-</div>
+                        </div>
+                    </td>
                 </tr>
                 <tr>
                     <td>יומי</td>
-                    <td id="smallCarDaily">-</td>
+                    <td id="smallCarDaily">
+                        <div class="price-container">
+                            <div class="formula"></div>
+                            <div class="price">-</div>
+                        </div>
+                    </td>
                 </tr>
             </tbody>
         </table>
@@ -190,7 +240,7 @@
 
     <script>
        let additionalCarsVisible = false;
-       let dailyModeActive = false;
+
         function toggleAdditionalCars() {
             additionalCarsVisible = !additionalCarsVisible;
             const row1 = document.getElementById("additionalCarsRow1");
@@ -204,216 +254,153 @@
             }
             calculate(); // Recalculate prices when visibility changes
         }
-          function initialSetup() {
-             const dailyCells = document.querySelectorAll('.daily-cell');
-              dailyCells.forEach(cell => cell.classList.add("hidden-cell"));
+
+          function isSeason() {
+            return document.getElementById("seasonCheckbox").checked;
         }
-        function toggleDailyMode() {
-            dailyModeActive = !dailyModeActive;
-             const hoursLabel = document.getElementById('hoursLabel');
-            const hoursInput = document.getElementById('hours');
-            const daysLabel = document.getElementById('daysLabel');
-            const daysInput = document.getElementById('days');
-            const hourlyCells = document.querySelectorAll('.hourly-cell');
-            const extra7Cells = document.querySelectorAll('.extra7-cell');
-            const upto5Cells = document.querySelectorAll('.upto5-cell');
-              const dailyCells = document.querySelectorAll('.daily-cell');
-             const dailyModeButton = document.getElementById('dailyModeButton');
-              const dailyModeText = document.getElementById('dailyModeText');
-              if (dailyModeActive) {
-                 hoursLabel.classList.add("hidden-cell");
-                 hoursInput.classList.add("hidden-cell");
-                daysLabel.classList.remove("hidden-cell");
-                 daysInput.classList.remove("hidden-cell");
-                  hourlyCells.forEach(cell => cell.classList.add("hidden-cell"));
-                  extra7Cells.forEach(cell => cell.classList.add("hidden-cell"));
-                   upto5Cells.forEach(cell => cell.classList.add("hidden-cell"));
-                      dailyCells.forEach(cell => cell.classList.remove("hidden-cell"));
-                     dailyModeText.textContent = "חישוב לפי ימים";
-                   dailyModeButton.classList.add('active');
-            } else {
-                hoursLabel.classList.remove("hidden-cell");
-                hoursInput.classList.remove("hidden-cell");
-               daysLabel.classList.add("hidden-cell");
-                daysInput.classList.add("hidden-cell");
-               hourlyCells.forEach(cell => cell.classList.remove("hidden-cell"));
-               extra7Cells.forEach(cell => cell.classList.remove("hidden-cell"));
-                upto5Cells.forEach(cell => cell.classList.remove("hidden-cell"));
-                dailyCells.forEach(cell => cell.classList.add("hidden-cell"));
-                 dailyModeText.textContent = "חישוב לפי שעות";
-                  dailyModeButton.classList.remove('active');
-            }
-            calculate();
-        }
+
+        // פונקציה לקביעת תעריף ק"מ דינמי
+		function getKmRate(carType, kilometers) {
+			switch (carType) {
+				case "c3":
+				case "micra":
+				case "picanto":
+					if (kilometers <= 29) return 2.3;
+					if (kilometers <= 59) return 1.9;
+					if (kilometers <= 119) return 1.5;
+					if (kilometers <= 499) return 1.1;
+					return 0.9;
+				case "p5008":
+					if (kilometers <= 59) return 2.5;
+					if (kilometers <= 119) return 2.1;
+					if (kilometers <= 499) return 1.6;
+					return 1.4;
+				default:
+					return 0; // Or throw an error: throw new Error("Invalid carType");
+			}
+		}
 
         function calculate() {
             const hours = parseFloat(document.getElementById("hours").value) || 0;
-            const days = parseFloat(document.getElementById("days").value) || 0;
             const kilometers = parseFloat(document.getElementById("kilometers").value) || 0;
-             let calculatedHours = dailyModeActive ? days * 24 : hours;
-        
-             // מחירים לסיטרואן C3
-            const c3HourlyRate = 14;
-            const c3PerKmRate = 1.5;
-            let c3PerHourCost = (calculatedHours * c3HourlyRate) + (kilometers * c3PerKmRate);
-            let c3Extra7Cost;
-            const extra7BaseC3 = 120;
-            if (calculatedHours > 0) {
-                const extraHours = Math.max(0, calculatedHours - 7);
-                c3Extra7Cost = extra7BaseC3 + (extraHours * c3HourlyRate) + (kilometers * 1);
-            } else {
-                c3Extra7Cost = "לא זמין";
-            }
-        
-            let c3DailyCost;
-            const dailyBaseC3 = 170;
-            if (calculatedHours > 0) {
-                const fullDays = Math.floor(calculatedHours / 24);
-                const remainingHours = calculatedHours % 24;
-                c3DailyCost = (fullDays * dailyBaseC3) + (remainingHours > 0 ? dailyBaseC3 : 0 )  + (kilometers * 1);
-            } else {
-                 c3DailyCost = "לא זמין";
-            }
-        
-           let c3WeeklyCost;
-            if (days > 0 )
-            {
-                 c3WeeklyCost = Math.floor(days/7) * 900 +  (days%7 > 0 ? 900 : 0) + (kilometers * 0.9);
+            let calculatedHours = hours;
 
+            // מחירים לסיטרואן C3
+            const c3HourlyRate = 17.2;
+            const dailyBaseC3 = 160;
+            let c3PerHourCost = calculatedHours * c3HourlyRate + kilometers * getKmRate("c3", kilometers);
+             let c3DailyCost = (Math.floor(calculatedHours / 24) * dailyBaseC3) + (calculatedHours % 24 > 0 ? dailyBaseC3 : 0) + kilometers * getKmRate("c3", kilometers);
+            if (isSeason()) {
+                 c3DailyCost +=  50;
             }
-            else {
-                c3WeeklyCost = "לא זמין";
+
+            const c3PerHourElement = document.getElementById("c3PerHour");
+            const c3PerHourPriceDiv = c3PerHourElement.querySelector(".price");
+            const c3PerHourFormulaDiv = c3PerHourElement.querySelector(".formula");
+            if (c3PerHourPriceDiv) {
+                c3PerHourPriceDiv.textContent = c3PerHourCost.toFixed(2) + " ₪";
             }
-            let c3MonthlyCost;
-            if (days > 0 )
-            {
-                 c3MonthlyCost = Math.floor(days/30) * 3500 + (days%30 > 0 ? 3500 : 0) + (kilometers * 0.8);
+            if (c3PerHourFormulaDiv) {
+                c3PerHourFormulaDiv.textContent = `${calculatedHours}h * ${c3HourlyRate} + ${kilometers}km * ${getKmRate("c3", kilometers)}`;
             }
-             else {
-               c3MonthlyCost = "לא זמין";
+
+             const c3DailyElement = document.getElementById("c3Daily");
+            const c3DailyPriceDiv = c3DailyElement.querySelector(".price");
+            const c3DailyFormulaDiv = c3DailyElement.querySelector(".formula");
+            if(c3DailyPriceDiv) {
+               c3DailyPriceDiv.textContent = c3DailyCost.toFixed(2) + " ₪";
             }
-        
+            if(c3DailyFormulaDiv){
+                 c3DailyFormulaDiv.textContent = `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${dailyBaseC3} + ${kilometers}km * ${getKmRate("c3", kilometers)}${isSeason() ? " + 50" : ""}`;
+            }
+
             // מחירים לפיג'ו 5008
             const p5008HourlyRate = 25;
-            const p5008PerKmRate = 2;
-            let p5008PerHourCost = (calculatedHours * p5008HourlyRate) + (kilometers * p5008PerKmRate);
-            let p5008Extra7Cost;
-            const extra7BaseP5008 = 180;
-            if (calculatedHours > 0) {
-                const extraHours = Math.max(0, calculatedHours - 7);
-                p5008Extra7Cost = extra7BaseP5008 + (extraHours * p5008HourlyRate) + (kilometers * 1.7);
-            } else {
-                p5008Extra7Cost = "לא זמין";
-            }
-        
-            let p5008DailyCost;
             const dailyBaseP5008 = 250;
-            if (calculatedHours > 0) {
-                const fullDays = Math.floor(calculatedHours / 24);
-                const remainingHours = calculatedHours % 24;
-                p5008DailyCost = (fullDays * dailyBaseP5008) + (remainingHours > 0 ? dailyBaseP5008 : 0 ) + (kilometers * 1.7);
-            } else {
-                 p5008DailyCost = "לא זמין";
+            let p5008PerHourCost = calculatedHours * p5008HourlyRate + kilometers * getKmRate("p5008", kilometers);
+            let p5008DailyCost = (Math.floor(calculatedHours / 24) * dailyBaseP5008) + (calculatedHours % 24 > 0 ? dailyBaseP5008 : 0) + kilometers * getKmRate("p5008", kilometers);
+            if (isSeason()) {
+                p5008DailyCost += 250;
             }
 
-            let p5008WeeklyCost;
-            if (days > 0 )
-            {
-                 p5008WeeklyCost = Math.floor(days/7) * 1400 +  (days%7 > 0 ? 1400 : 0) + (kilometers * 1.4);
-             }
-             else {
-               p5008WeeklyCost = "לא זמין";
+            const p5008PerHourElement = document.getElementById("p5008PerHour");
+            const p5008PerHourPriceDiv = p5008PerHourElement.querySelector(".price");
+            const p5008PerHourFormulaDiv = p5008PerHourElement.querySelector(".formula");
+            if(p5008PerHourPriceDiv){
+                 p5008PerHourPriceDiv.textContent = p5008PerHourCost.toFixed(2) + " ₪";
             }
-            let p5008MonthlyCost;
-            if (days > 0 )
-            {
-                 p5008MonthlyCost = Math.floor(days/30) * 5100 + (days%30 > 0 ? 5100 : 0) + (kilometers * 1.4);
-            }
-            else {
-                p5008MonthlyCost = "לא זמין";
+            if(p5008PerHourFormulaDiv){
+                p5008PerHourFormulaDiv.textContent = `${calculatedHours}h * ${p5008HourlyRate} + ${kilometers}km * ${getKmRate("p5008", kilometers)}`;
             }
 
-          // מחירים לניסאן מיקרה
-          const nissanMicraHourlyRate = 10;
-          const nissanMicraPerKmRate = 1.5;
-          let nissanMicraPerHourCost = (calculatedHours * nissanMicraHourlyRate) + (kilometers * nissanMicraPerKmRate);
-          let nissanMicraExtra7Cost;
-            const nissanMicraExtra7Base = 80;
-           if (calculatedHours > 0) {
-                const extraHours = Math.max(0, calculatedHours - 7);
-                nissanMicraExtra7Cost = nissanMicraExtra7Base + (extraHours * 10) + (kilometers * 1);
-            } else {
-                 nissanMicraExtra7Cost = "לא זמין";
-           }
-          let nissanMicraDailyCost;
-          const nissanMicraDailyBase = 120;
-            if (calculatedHours > 0) {
-                const fullDays = Math.floor(calculatedHours / 24);
-                const remainingHours = calculatedHours % 24;
-               nissanMicraDailyCost = (fullDays * nissanMicraDailyBase) + (remainingHours > 0 ? nissanMicraDailyBase : 0 ) + (kilometers * 1);
-            } else {
-                nissanMicraDailyCost = "לא זמין";
+            const p5008DailyElement = document.getElementById("p5008Daily");
+            const p5008DailyPriceDiv = p5008DailyElement.querySelector(".price");
+            const p5008DailyFormulaDiv = p5008DailyElement.querySelector(".formula");
+            if(p5008DailyPriceDiv) {
+                p5008DailyPriceDiv.textContent = p5008DailyCost.toFixed(2) + " ₪";
+            }
+            if(p5008DailyFormulaDiv){
+                p5008DailyFormulaDiv.textContent = `${Math.max(1,Math.floor(calculatedHours / 24))}d * ${dailyBaseP5008} + ${kilometers}km * ${getKmRate("p5008", kilometers)}${isSeason() ? " + 250" : ""}`;
             }
 
-            let nissanMicraWeeklyCost;
-             if (days > 0 )
-            {
-                 nissanMicraWeeklyCost =  Math.floor(days/7) * 600 + (days%7 > 0 ? 600 : 0) + (kilometers * 0.8);
-            }
-             else {
-                nissanMicraWeeklyCost = "לא זמין";
-            }
-             let nissanMicraMonthlyCost;
-            if (days > 0 )
-            {
-                 nissanMicraMonthlyCost = Math.floor(days/30) * 2200 + (days%30 > 0 ? 2200 : 0) + (kilometers * 0.8);
-            }
-              else {
-              nissanMicraMonthlyCost = "לא זמין";
-            }
-    
-          // מחירים לפיקנטו/ספייס סטאר/i10
-           const picantoHourlyRate = 12;
-            const picantoPerKmRate = 1.5;
-            let picantoPerHourCost = (calculatedHours * picantoHourlyRate) + (kilometers * picantoPerKmRate);
-             let picantoExtra7Cost;
-            const picantoExtra7Base = 110;
-           if (calculatedHours > 0) {
-                const extraHours = Math.max(0, calculatedHours - 7);
-                 picantoExtra7Cost = picantoExtra7Base + (extraHours * 12) + (kilometers * 1);
-           } else {
-               picantoExtra7Cost = "לא זמין";
-            }
-         let picantoDailyCost;
-            const picantoDailyBase = 150;
-            if (calculatedHours > 0) {
-               const fullDays = Math.floor(calculatedHours / 24);
-               const remainingHours = calculatedHours % 24;
-                 picantoDailyCost = (fullDays * picantoDailyBase) + (remainingHours > 0 ? picantoDailyBase : 0 ) + (kilometers * 1);
-             } else {
-                 picantoDailyCost = "לא זמין";
+            // מחירים לניסאן מיקרה
+            const nissanMicraHourlyRate = 12.2;
+            const nissanMicraDailyBase = 110;
+            let nissanMicraPerHourCost = calculatedHours * nissanMicraHourlyRate + kilometers * getKmRate("micra", kilometers);
+            let nissanMicraDailyCost = (Math.floor(calculatedHours / 24) * nissanMicraDailyBase) + (calculatedHours % 24 > 0 ? nissanMicraDailyBase : 0) + kilometers * getKmRate("micra", kilometers);
+            if (isSeason()) {
+                nissanMicraDailyCost +=  50;
             }
 
-        let picantoWeeklyCost;
-         if (days > 0 )
-            {
-              picantoWeeklyCost =   Math.floor(days/7) * 800 + (days%7 > 0 ? 800 : 0) + (kilometers * 0.8);
+            const nissanMicraPerHourElement = document.getElementById("nissanMicraPerHour");
+            const nissanMicraPerHourPriceDiv = nissanMicraPerHourElement.querySelector(".price");
+            const nissanMicraPerHourFormulaDiv = nissanMicraPerHourElement.querySelector(".formula");
+            if(nissanMicraPerHourPriceDiv){
+                nissanMicraPerHourPriceDiv.textContent = nissanMicraPerHourCost.toFixed(2) + " ₪";
+            }
+            if(nissanMicraPerHourFormulaDiv){
+                 nissanMicraPerHourFormulaDiv.textContent = `${calculatedHours}h * ${nissanMicraHourlyRate} + ${kilometers}km * ${getKmRate("micra", kilometers)}`;
+            }
 
+            const nissanMicraDailyElement = document.getElementById("nissanMicraDaily");
+            const nissanMicraDailyPriceDiv = nissanMicraDailyElement.querySelector(".price");
+            const nissanMicraDailyFormulaDiv = nissanMicraDailyElement.querySelector(".formula");
+            if(nissanMicraDailyPriceDiv){
+                 nissanMicraDailyPriceDiv.textContent = nissanMicraDailyCost.toFixed(2) + " ₪";
             }
-         else
-           {
-               picantoWeeklyCost = "לא זמין";
-           }
-         let picantoMonthlyCost;
-            if (days > 0 )
-            {
-                 picantoMonthlyCost = Math.floor(days/30) * 3200 + (days%30 > 0 ? 3200 : 0) + (kilometers * 0.8);
+            if(nissanMicraDailyFormulaDiv){
+                nissanMicraDailyFormulaDiv.textContent = `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${nissanMicraDailyBase} + ${kilometers}km * ${getKmRate("micra", kilometers)}${isSeason() ? " + 50" : ""}`;
             }
-            else
-            {
-              picantoMonthlyCost = "לא זמין";
+
+            // מחירים לפיקנטו/ספייס סטאר/i10
+            const picantoHourlyRate = 15.2;
+            const picantoDailyBase = 140;
+            let picantoPerHourCost = calculatedHours * picantoHourlyRate + kilometers * getKmRate("picanto", kilometers);
+            let picantoDailyCost = (Math.floor(calculatedHours / 24) * picantoDailyBase) + (calculatedHours % 24 > 0 ? picantoDailyBase : 0) + kilometers * getKmRate("picanto", kilometers);
+            if (isSeason()) {
+                picantoDailyCost += 50;
             }
-        
+
+            const picantoPerHourElement = document.getElementById("picantoPerHour");
+            const picantoPerHourPriceDiv = picantoPerHourElement.querySelector(".price");
+            const picantoPerHourFormulaDiv = picantoPerHourElement.querySelector(".formula");
+            if(picantoPerHourPriceDiv){
+                 picantoPerHourPriceDiv.textContent = picantoPerHourCost.toFixed(2) + " ₪";
+            }
+            if(picantoPerHourFormulaDiv){
+                picantoPerHourFormulaDiv.textContent = `${calculatedHours}h * ${picantoHourlyRate} + ${kilometers}km * ${getKmRate("picanto", kilometers)}`;
+            }
+
+            const picantoDailyElement = document.getElementById("picantoDaily");
+            const picantoDailyPriceDiv = picantoDailyElement.querySelector(".price");
+            const picantoDailyFormulaDiv = picantoDailyElement.querySelector(".formula");
+            if(picantoDailyPriceDiv){
+                picantoDailyPriceDiv.textContent = picantoDailyCost.toFixed(2) + " ₪";
+            }
+            if(picantoDailyFormulaDiv){
+                picantoDailyFormulaDiv.textContent = `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${picantoDailyBase} + ${kilometers}km * ${getKmRate("picanto", kilometers)}${isSeason() ? " + 50" : ""}`;
+            }
+
             // מחירים לרכב קטן - מיטב
              let smallCarUpTo5HoursCost;
             if (calculatedHours <= 5) {
@@ -422,7 +409,7 @@
              } else {
                 smallCarUpTo5HoursCost = "לא זמין";
             }
-            
+
             let smallCarDailyCost;
            if (calculatedHours > 0) {
                 const fullDays = Math.floor(calculatedHours / 24);
@@ -432,47 +419,52 @@
            } else {
                 smallCarDailyCost = "לא זמין";
             }
+            if (isSeason()) {
+                smallCarDailyCost += smallCarDailyCost === "לא זמין" ? 0: 50;
+            }
+
+            const smallCarUpTo5HoursElement = document.getElementById("smallCarUpTo5Hours");
+            const smallCarUpTo5HoursPriceDiv =  smallCarUpTo5HoursElement.querySelector(".price");
+            const smallCarUpTo5HoursFormulaDiv = smallCarUpTo5HoursElement.querySelector(".formula");
+            if(smallCarUpTo5HoursPriceDiv){
+                 smallCarUpTo5HoursPriceDiv.textContent = smallCarUpTo5HoursCost.toFixed(2) + " ₪";
+            }
+            if(smallCarUpTo5HoursFormulaDiv){
+                smallCarUpTo5HoursFormulaDiv.textContent =  smallCarUpTo5HoursCost === "לא זמין" ? "לא זמין" : `180 +  ${Math.max(0, kilometers - 200)}km * 1.2 + ${kilometers}km * 0.45`;
+            }
+
+            const smallCarDailyElement = document.getElementById("smallCarDaily");
+            const smallCarDailyPriceDiv = smallCarDailyElement.querySelector(".price");
+            const smallCarDailyFormulaDiv = smallCarDailyElement.querySelector(".formula");
+            if(smallCarDailyPriceDiv){
+                smallCarDailyPriceDiv.textContent = smallCarDailyCost.toFixed(2) + " ₪";
+            }
+            if(smallCarDailyFormulaDiv){
+                smallCarDailyFormulaDiv.textContent = smallCarDailyCost === "לא זמין" ? "לא זמין" :`${Math.max(1,Math.floor(calculatedHours / 24))}d * 230 + 230 + ${Math.max(0, kilometers - (250 * (Math.floor(calculatedHours / 24) + 1)))}km * 1.2 + ${kilometers}km * 0.45${isSeason() ? " + 50" : ""}`;
+            }
+
               let allPrices = [
                 { element: document.getElementById("c3PerHour"), value: c3PerHourCost },
-                { element: document.getElementById("c3Extra7"), value: c3Extra7Cost },
                 { element: document.getElementById("c3Daily"), value: c3DailyCost },
-                   { element: document.getElementById("c3Weekly"), value: c3WeeklyCost },
-                  { element: document.getElementById("c3Monthly"), value: c3MonthlyCost },
                 { element: document.getElementById("p5008PerHour"), value: p5008PerHourCost },
-                { element: document.getElementById("p5008Extra7"), value: p5008Extra7Cost },
                 { element: document.getElementById("p5008Daily"), value: p5008DailyCost },
-                  { element: document.getElementById("p5008Weekly"), value: p5008WeeklyCost },
-                    { element: document.getElementById("p5008Monthly"), value: p5008MonthlyCost },
                  { element: document.getElementById("smallCarUpTo5Hours"), value: smallCarUpTo5HoursCost },
                 { element: document.getElementById("smallCarDaily"), value: smallCarDailyCost }
-               
+
             ];
              if (additionalCarsVisible) {
                    allPrices.push(
                      { element: document.getElementById("nissanMicraPerHour"), value: nissanMicraPerHourCost },
-                     { element: document.getElementById("nissanMicraExtra7"), value: nissanMicraExtra7Cost },
                     { element: document.getElementById("nissanMicraDaily"), value: nissanMicraDailyCost },
-                     { element: document.getElementById("nissanMicraWeekly"), value: nissanMicraWeeklyCost },
-                      { element: document.getElementById("nissanMicraMonthly"), value: nissanMicraMonthlyCost },
                     { element: document.getElementById("picantoPerHour"), value: picantoPerHourCost },
-                     { element: document.getElementById("picantoExtra7"), value: picantoExtra7Cost },
-                     { element: document.getElementById("picantoDaily"), value: picantoDailyCost },
-                     { element: document.getElementById("picantoWeekly"), value: picantoWeeklyCost },
-                     { element: document.getElementById("picantoMonthly"), value: picantoMonthlyCost }
+                     { element: document.getElementById("picantoDaily"), value: picantoDailyCost }
+
                 );
-            }
-           
-            if(dailyModeActive) {
-                  allPrices = allPrices.filter(item => item.element.id.includes("Daily") ||item.element.id.includes("Weekly") || item.element.id.includes("Monthly") );
             }
 
             allPrices.forEach(item => {
-                if (typeof item.value === "number") {
-                    item.element.textContent = item.value.toFixed(2) + " ₪";
-                } else {
-                    item.element.textContent = item.value;
-                }
-                item.element.classList.remove("highlight-lowest", "highlight-second", "highlight-third");
+              item.element.classList.remove("highlight-lowest", "highlight-second", "highlight-third");
+
             });
 
             const validPrices = allPrices.filter(item => typeof item.value === "number");
@@ -483,9 +475,10 @@
             }
 
             if (validPrices.length > 1) {
-                validPrices.forEach((item, index) => {
+               validPrices.forEach((item, index) => {
                     if (index === 1) item.element.classList.add("highlight-second");
-                    if (index === 2) item.element.classList.add("highlight-third");
+                   if (index === 2) item.element.classList.add("highlight-third");
+
                 });
             }
         }
