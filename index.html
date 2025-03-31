@@ -47,9 +47,13 @@
              align-items: center;
              flex-wrap: wrap;
         }
-          .input-container > * {
+          .input-container > div { /* Target divs directly for better specificity */
             flex: 1 1 calc(50% - 10px); /* Each item takes up half the width, minus gap*/
             min-width: 150px; /* Prevent inputs from becoming too small */
+        }
+         label { /* Style labels for better alignment */
+            display: block;
+            margin-bottom: 5px;
         }
 
         .section-title {
@@ -58,6 +62,13 @@
             justify-content: center; /* Center the title */
             gap: 10px;
             margin-bottom: 10px;
+        }
+        .section-title a { /* Style link in title */
+            text-decoration: none;
+            color: inherit;
+        }
+         .section-title a:hover {
+            text-decoration: underline;
         }
 
         .highlight-lowest {
@@ -70,19 +81,25 @@
         .highlight-third {
             background-color: #f8d7da;
         }
-        .link {
-            text-decoration: none;
-        }
         .hidden-row {
-            display: none;
-        }
-        .hidden-cell {
             display: none;
         }
 
          #additionalCarsButton {
             margin-top: 10px; /* Add some spacing above the button */
-        }
+            padding: 10px 20px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+         }
+          #additionalCarsButton:hover {
+             background-color: #e0e0e0; /* Slightly darker on hover */
+         }
+
            .price-container {
             position: relative; /* חשוב כדי שהמיקום האבסולוטי יעבוד נכון */
             text-align: center;
@@ -108,6 +125,13 @@
         #seasonCheckboxContainer {
             margin-top: 10px;
             text-align: center;
+              display: flex; /* Align checkbox and label nicely */
+            align-items: center;
+            justify-content: center;
+        }
+         #seasonCheckboxContainer label {
+            margin-bottom: 0; /* Remove bottom margin for label in this container */
+            margin-right: 5px; /* Space between label and checkbox */
         }
     </style>
 </head>
@@ -118,12 +142,15 @@
         <p>הכניסו את מספר השעות והקילומטרים לחישוב עלות השכרה עבור כל רכב:</p>
 
     <div class="input-container">
-        <label for="hours">מספר שעות:</label>
-        <input type="number" id="hours" placeholder="הכנס שעות" oninput="calculate()">
-
-  <label for="kilometers">מספר קילומטרים:</label>
+        <div>
+             <label for="hours">מספר שעות:</label>
+            <input type="number" id="hours" placeholder="הכנס שעות" oninput="calculate()">
+        </div>
+       <div>
+         <label for="kilometers">מספר קילומטרים:</label>
         <input type="number" id="kilometers" placeholder="הכנס קילומטרים" oninput="calculate()">
        </div>
+    </div>
          <div id="seasonCheckboxContainer">
               <label for="seasonCheckbox">תוספת עונה? (6/4-26/4)</label>
             <input type="checkbox" id="seasonCheckbox" onchange="calculate()">
@@ -140,6 +167,23 @@
                 </tr>
             </thead>
             <tbody>
+                 <!-- Picanto moved up and always visible -->
+                <tr id="additionalCarsRow2">
+                    <td>פיקנטו/ספייס סטאר/i10</td>
+                    <td id="picantoPerHour">
+                      <div class="price-container">
+                          <div class="formula"></div>
+                          <div class="price">-</div>
+                      </div>
+                    </td>
+                    <td id="picantoDaily">
+                      <div class="price-container">
+                          <div class="formula"></div>
+                          <div class="price">-</div>
+                      </div>
+                    </td>
+                </tr>
+                 <!-- Citroen C3 -->
                 <tr>
                     <td>סיטרואן C3 (5 מקומות)</td>
                     <td id="c3PerHour">
@@ -155,6 +199,7 @@
                         </div>
                     </td>
                 </tr>
+                <!-- Peugeot 5008 -->
                 <tr>
                     <td>פיג'ו 5008 (7 מקומות)</td>
                      <td id="p5008PerHour">
@@ -170,6 +215,7 @@
                         </div>
                     </td>
                 </tr>
+                <!-- Nissan Micra - still hidden by default -->
                 <tr class="hidden-row" id="additionalCarsRow1">
                   <td>ניסאן מיקרה</td>
                   <td id="nissanMicraPerHour">
@@ -185,21 +231,6 @@
                     </div>
                   </td>
                 </tr>
-                  <tr class="hidden-row" id="additionalCarsRow2">
-                    <td>פיקנטו/ספייס סטאר/i10</td>
-                  <td id="picantoPerHour">
-                    <div class="price-container">
-                        <div class="formula"></div>
-                        <div class="price">-</div>
-                    </div>
-                  </td>
-                  <td id="picantoDaily">
-                    <div class="price-container">
-                        <div class="formula"></div>
-                        <div class="price">-</div>
-                    </div>
-                  </td>
-              </tr>
             </tbody>
         </table>
         <button id="additionalCarsButton" onclick="toggleAdditionalCars()">רכבים נוספים</button>
@@ -239,18 +270,15 @@
     </div>
 
     <script>
-       let additionalCarsVisible = false;
+       let additionalCarsVisible = false; // Tracks only Nissan Micra now
 
         function toggleAdditionalCars() {
             additionalCarsVisible = !additionalCarsVisible;
-            const row1 = document.getElementById("additionalCarsRow1");
-            const row2 = document.getElementById("additionalCarsRow2");
+            const row1 = document.getElementById("additionalCarsRow1"); // Only toggle Nissan Micra row
              if (additionalCarsVisible) {
                  row1.classList.remove("hidden-row");
-                 row2.classList.remove("hidden-row");
             } else {
                 row1.classList.add("hidden-row");
-                row2.classList.add("hidden-row");
             }
             calculate(); // Recalculate prices when visibility changes
         }
@@ -285,36 +313,15 @@
             const kilometers = parseFloat(document.getElementById("kilometers").value) || 0;
             let calculatedHours = hours;
 
-            // מחירים לסיטרואן C3
+            // --- Calculate CityCar Prices ---
             const c3HourlyRate = 17.2;
             const dailyBaseC3 = 160;
             let c3PerHourCost = calculatedHours * c3HourlyRate + kilometers * getKmRate("c3", kilometers);
-             let c3DailyCost = (Math.floor(calculatedHours / 24) * dailyBaseC3) + (calculatedHours % 24 > 0 ? dailyBaseC3 : 0) + kilometers * getKmRate("c3", kilometers);
+            let c3DailyCost = (Math.floor(calculatedHours / 24) * dailyBaseC3) + (calculatedHours % 24 > 0 ? dailyBaseC3 : 0) + kilometers * getKmRate("c3", kilometers);
             if (isSeason()) {
                  c3DailyCost +=  50;
             }
 
-            const c3PerHourElement = document.getElementById("c3PerHour");
-            const c3PerHourPriceDiv = c3PerHourElement.querySelector(".price");
-            const c3PerHourFormulaDiv = c3PerHourElement.querySelector(".formula");
-            if (c3PerHourPriceDiv) {
-                c3PerHourPriceDiv.textContent = c3PerHourCost.toFixed(2) + " ₪";
-            }
-            if (c3PerHourFormulaDiv) {
-                c3PerHourFormulaDiv.textContent = `${calculatedHours}h * ${c3HourlyRate} + ${kilometers}km * ${getKmRate("c3", kilometers)}`;
-            }
-
-             const c3DailyElement = document.getElementById("c3Daily");
-            const c3DailyPriceDiv = c3DailyElement.querySelector(".price");
-            const c3DailyFormulaDiv = c3DailyElement.querySelector(".formula");
-            if(c3DailyPriceDiv) {
-               c3DailyPriceDiv.textContent = c3DailyCost.toFixed(2) + " ₪";
-            }
-            if(c3DailyFormulaDiv){
-                 c3DailyFormulaDiv.textContent = `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${dailyBaseC3} + ${kilometers}km * ${getKmRate("c3", kilometers)}${isSeason() ? " + 50" : ""}`;
-            }
-
-            // מחירים לפיג'ו 5008
             const p5008HourlyRate = 25;
             const dailyBaseP5008 = 250;
             let p5008PerHourCost = calculatedHours * p5008HourlyRate + kilometers * getKmRate("p5008", kilometers);
@@ -323,27 +330,6 @@
                 p5008DailyCost += 250;
             }
 
-            const p5008PerHourElement = document.getElementById("p5008PerHour");
-            const p5008PerHourPriceDiv = p5008PerHourElement.querySelector(".price");
-            const p5008PerHourFormulaDiv = p5008PerHourElement.querySelector(".formula");
-            if(p5008PerHourPriceDiv){
-                 p5008PerHourPriceDiv.textContent = p5008PerHourCost.toFixed(2) + " ₪";
-            }
-            if(p5008PerHourFormulaDiv){
-                p5008PerHourFormulaDiv.textContent = `${calculatedHours}h * ${p5008HourlyRate} + ${kilometers}km * ${getKmRate("p5008", kilometers)}`;
-            }
-
-            const p5008DailyElement = document.getElementById("p5008Daily");
-            const p5008DailyPriceDiv = p5008DailyElement.querySelector(".price");
-            const p5008DailyFormulaDiv = p5008DailyElement.querySelector(".formula");
-            if(p5008DailyPriceDiv) {
-                p5008DailyPriceDiv.textContent = p5008DailyCost.toFixed(2) + " ₪";
-            }
-            if(p5008DailyFormulaDiv){
-                p5008DailyFormulaDiv.textContent = `${Math.max(1,Math.floor(calculatedHours / 24))}d * ${dailyBaseP5008} + ${kilometers}km * ${getKmRate("p5008", kilometers)}${isSeason() ? " + 250" : ""}`;
-            }
-
-            // מחירים לניסאן מיקרה
             const nissanMicraHourlyRate = 12.2;
             const nissanMicraDailyBase = 110;
             let nissanMicraPerHourCost = calculatedHours * nissanMicraHourlyRate + kilometers * getKmRate("micra", kilometers);
@@ -352,27 +338,6 @@
                 nissanMicraDailyCost +=  50;
             }
 
-            const nissanMicraPerHourElement = document.getElementById("nissanMicraPerHour");
-            const nissanMicraPerHourPriceDiv = nissanMicraPerHourElement.querySelector(".price");
-            const nissanMicraPerHourFormulaDiv = nissanMicraPerHourElement.querySelector(".formula");
-            if(nissanMicraPerHourPriceDiv){
-                nissanMicraPerHourPriceDiv.textContent = nissanMicraPerHourCost.toFixed(2) + " ₪";
-            }
-            if(nissanMicraPerHourFormulaDiv){
-                 nissanMicraPerHourFormulaDiv.textContent = `${calculatedHours}h * ${nissanMicraHourlyRate} + ${kilometers}km * ${getKmRate("micra", kilometers)}`;
-            }
-
-            const nissanMicraDailyElement = document.getElementById("nissanMicraDaily");
-            const nissanMicraDailyPriceDiv = nissanMicraDailyElement.querySelector(".price");
-            const nissanMicraDailyFormulaDiv = nissanMicraDailyElement.querySelector(".formula");
-            if(nissanMicraDailyPriceDiv){
-                 nissanMicraDailyPriceDiv.textContent = nissanMicraDailyCost.toFixed(2) + " ₪";
-            }
-            if(nissanMicraDailyFormulaDiv){
-                nissanMicraDailyFormulaDiv.textContent = `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${nissanMicraDailyBase} + ${kilometers}km * ${getKmRate("micra", kilometers)}${isSeason() ? " + 50" : ""}`;
-            }
-
-            // מחירים לפיקנטו/ספייס סטאר/i10
             const picantoHourlyRate = 15.2;
             const picantoDailyBase = 140;
             let picantoPerHourCost = calculatedHours * picantoHourlyRate + kilometers * getKmRate("picanto", kilometers);
@@ -381,27 +346,7 @@
                 picantoDailyCost += 50;
             }
 
-            const picantoPerHourElement = document.getElementById("picantoPerHour");
-            const picantoPerHourPriceDiv = picantoPerHourElement.querySelector(".price");
-            const picantoPerHourFormulaDiv = picantoPerHourElement.querySelector(".formula");
-            if(picantoPerHourPriceDiv){
-                 picantoPerHourPriceDiv.textContent = picantoPerHourCost.toFixed(2) + " ₪";
-            }
-            if(picantoPerHourFormulaDiv){
-                picantoPerHourFormulaDiv.textContent = `${calculatedHours}h * ${picantoHourlyRate} + ${kilometers}km * ${getKmRate("picanto", kilometers)}`;
-            }
-
-            const picantoDailyElement = document.getElementById("picantoDaily");
-            const picantoDailyPriceDiv = picantoDailyElement.querySelector(".price");
-            const picantoDailyFormulaDiv = picantoDailyElement.querySelector(".formula");
-            if(picantoDailyPriceDiv){
-                picantoDailyPriceDiv.textContent = picantoDailyCost.toFixed(2) + " ₪";
-            }
-            if(picantoDailyFormulaDiv){
-                picantoDailyFormulaDiv.textContent = `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${picantoDailyBase} + ${kilometers}km * ${getKmRate("picanto", kilometers)}${isSeason() ? " + 50" : ""}`;
-            }
-
-            // מחירים לרכב קטן - מיטב
+             // --- Calculate Mitav Prices ---
              let smallCarUpTo5HoursCost;
             if (calculatedHours <= 5) {
                 const extraKm = Math.max(0, kilometers - 200);
@@ -423,65 +368,80 @@
                 smallCarDailyCost += smallCarDailyCost === "לא זמין" ? 0: 50;
             }
 
-            const smallCarUpTo5HoursElement = document.getElementById("smallCarUpTo5Hours");
-            const smallCarUpTo5HoursPriceDiv =  smallCarUpTo5HoursElement.querySelector(".price");
-            const smallCarUpTo5HoursFormulaDiv = smallCarUpTo5HoursElement.querySelector(".formula");
-            if(smallCarUpTo5HoursPriceDiv){
-                 smallCarUpTo5HoursPriceDiv.textContent = smallCarUpTo5HoursCost.toFixed(2) + " ₪";
-            }
-            if(smallCarUpTo5HoursFormulaDiv){
-                smallCarUpTo5HoursFormulaDiv.textContent =  smallCarUpTo5HoursCost === "לא זמין" ? "לא זמין" : `180 +  ${Math.max(0, kilometers - 200)}km * 1.2 + ${kilometers}km * 0.45`;
+            // --- Update DOM (Display prices and formulas) ---
+
+            function updateElement(elementId, price, formula) {
+                const element = document.getElementById(elementId);
+                if (!element) return; // Exit if element not found
+
+                const priceDiv = element.querySelector(".price");
+                const formulaDiv = element.querySelector(".formula");
+
+                if (priceDiv) {
+                    priceDiv.textContent = typeof price === 'number' ? price.toFixed(2) + " ₪" : price;
+                }
+                if (formulaDiv) {
+                    formulaDiv.textContent = formula;
+                }
             }
 
-            const smallCarDailyElement = document.getElementById("smallCarDaily");
-            const smallCarDailyPriceDiv = smallCarDailyElement.querySelector(".price");
-            const smallCarDailyFormulaDiv = smallCarDailyElement.querySelector(".formula");
-            if(smallCarDailyPriceDiv){
-                smallCarDailyPriceDiv.textContent = smallCarDailyCost.toFixed(2) + " ₪";
-            }
-            if(smallCarDailyFormulaDiv){
-                smallCarDailyFormulaDiv.textContent = smallCarDailyCost === "לא זמין" ? "לא זמין" :`${Math.max(1,Math.floor(calculatedHours / 24))}d * 230 + 230 + ${Math.max(0, kilometers - (250 * (Math.floor(calculatedHours / 24) + 1)))}km * 1.2 + ${kilometers}km * 0.45${isSeason() ? " + 50" : ""}`;
-            }
+             updateElement("c3PerHour", c3PerHourCost, `${calculatedHours}h * ${c3HourlyRate} + ${kilometers}km * ${getKmRate("c3", kilometers)}`);
+            updateElement("c3Daily", c3DailyCost, `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${dailyBaseC3} + ${kilometers}km * ${getKmRate("c3", kilometers)}${isSeason() ? " + 50" : ""}`);
+            updateElement("p5008PerHour", p5008PerHourCost, `${calculatedHours}h * ${p5008HourlyRate} + ${kilometers}km * ${getKmRate("p5008", kilometers)}`);
+            updateElement("p5008Daily", p5008DailyCost, `${Math.max(1,Math.floor(calculatedHours / 24))}d * ${dailyBaseP5008} + ${kilometers}km * ${getKmRate("p5008", kilometers)}${isSeason() ? " + 250" : ""}`);
+            updateElement("nissanMicraPerHour", nissanMicraPerHourCost, `${calculatedHours}h * ${nissanMicraHourlyRate} + ${kilometers}km * ${getKmRate("micra", kilometers)}`);
+            updateElement("nissanMicraDaily", nissanMicraDailyCost, `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${nissanMicraDailyBase} + ${kilometers}km * ${getKmRate("micra", kilometers)}${isSeason() ? " + 50" : ""}`);
+            updateElement("picantoPerHour", picantoPerHourCost, `${calculatedHours}h * ${picantoHourlyRate} + ${kilometers}km * ${getKmRate("picanto", kilometers)}`);
+            updateElement("picantoDaily", picantoDailyCost, `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${picantoDailyBase} + ${kilometers}km * ${getKmRate("picanto", kilometers)}${isSeason() ? " + 50" : ""}`);
 
+             updateElement("smallCarUpTo5Hours", smallCarUpTo5HoursCost, smallCarUpTo5HoursCost === "לא זמין" ? "לא זמין" : `180 +  ${Math.max(0, kilometers - 200)}km * 1.2 + ${kilometers}km * 0.45`);
+             updateElement("smallCarDaily", smallCarDailyCost, smallCarDailyCost === "לא זמין" ? "לא זמין" :`${Math.max(1,Math.floor(calculatedHours / 24))}d * 230 + 230 + ${Math.max(0, kilometers - (250 * (Math.floor(calculatedHours / 24) + 1)))}km * 1.2 + ${kilometers}km * 0.45${isSeason() ? " + 50" : ""}`);
+
+              // --- Highlight Prices ---
               let allPrices = [
                 { element: document.getElementById("c3PerHour"), value: c3PerHourCost },
                 { element: document.getElementById("c3Daily"), value: c3DailyCost },
                 { element: document.getElementById("p5008PerHour"), value: p5008PerHourCost },
                 { element: document.getElementById("p5008Daily"), value: p5008DailyCost },
-                 { element: document.getElementById("smallCarUpTo5Hours"), value: smallCarUpTo5HoursCost },
+                { element: document.getElementById("picantoPerHour"), value: picantoPerHourCost }, // Picanto always included
+                { element: document.getElementById("picantoDaily"), value: picantoDailyCost }, // Picanto always included
+                { element: document.getElementById("smallCarUpTo5Hours"), value: smallCarUpTo5HoursCost },
                 { element: document.getElementById("smallCarDaily"), value: smallCarDailyCost }
-
             ];
-             if (additionalCarsVisible) {
+
+             if (additionalCarsVisible) { // Only add Nissan Micra if visible
                    allPrices.push(
                      { element: document.getElementById("nissanMicraPerHour"), value: nissanMicraPerHourCost },
-                    { element: document.getElementById("nissanMicraDaily"), value: nissanMicraDailyCost },
-                    { element: document.getElementById("picantoPerHour"), value: picantoPerHourCost },
-                     { element: document.getElementById("picantoDaily"), value: picantoDailyCost }
-
-                );
+                    { element: document.getElementById("nissanMicraDaily"), value: nissanMicraDailyCost }
+                   );
             }
 
+            // Remove existing highlights
             allPrices.forEach(item => {
-              item.element.classList.remove("highlight-lowest", "highlight-second", "highlight-third");
-
+                if (item.element) { // Check if element exists before removing class
+                    item.element.classList.remove("highlight-lowest", "highlight-second", "highlight-third");
+                }
             });
 
-            const validPrices = allPrices.filter(item => typeof item.value === "number");
+             // Filter valid prices and sort
+            const validPrices = allPrices.filter(item => typeof item.value === "number" && item.element); // Ensure element exists
             validPrices.sort((a, b) => a.value - b.value);
 
+             // Apply new highlights
             if (validPrices.length > 0) {
                 validPrices[0].element.classList.add("highlight-lowest");
             }
-
             if (validPrices.length > 1) {
                validPrices.forEach((item, index) => {
                     if (index === 1) item.element.classList.add("highlight-second");
                    if (index === 2) item.element.classList.add("highlight-third");
-
-                });
+               });
             }
         }
+
+          // Initial calculation on page load
+        document.addEventListener('DOMContentLoaded', calculate);
+
     </script>
 </body>
 </html>
