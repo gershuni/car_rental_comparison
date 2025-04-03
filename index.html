@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>השוואת מחירי השכרת רכב - סיטיקאר/מיטב</title>
+    <title>השוואת מחירי השכרת רכב - סיטיקאר/מייקאר/מיטב</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -40,6 +40,7 @@
         }
         input[type="checkbox"] {
             margin-left: 5px;
+             transform: scale(1.2); /* Make checkbox slightly larger */
         }
            .input-container {
             display: flex;
@@ -61,7 +62,10 @@
             align-items: center;
             justify-content: center; /* Center the title */
             gap: 10px;
+            margin-top: 25px; /* Add more space between sections */
             margin-bottom: 10px;
+             border-top: 1px solid #eee; /* Optional separator */
+            padding-top: 15px; /* Optional separator */
         }
         .section-title a { /* Style link in title */
             text-decoration: none;
@@ -137,7 +141,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>השוואת מחירי השכרת רכב - סיטיקאר/מיטב</h1>
+        <h1>השוואת מחירי השכרת רכב - סיטיקאר/מייקאר/מיטב</h1>
 
         <p>הכניסו את מספר השעות והקילומטרים לחישוב עלות השכרה עבור כל רכב:</p>
 
@@ -235,6 +239,69 @@
         </table>
         <button id="additionalCarsButton" onclick="toggleAdditionalCars()">רכבים נוספים</button>
 
+        <!-- MyCar Section -->
+        <div class="section-title">
+            <h2>מייקאר</h2>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>רכב</th>
+                    <th>לפי שעה</th>
+                    <th>יומי</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>רכב קטן</td>
+                    <td id="mycarSmallPerHour">
+                      <div class="price-container">
+                          <div class="formula"></div>
+                          <div class="price">-</div>
+                      </div>
+                    </td>
+                    <td id="mycarSmallDaily">
+                      <div class="price-container">
+                          <div class="formula"></div>
+                          <div class="price">-</div>
+                      </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>משפחתי</td>
+                    <td id="mycarFamilyPerHour">
+                      <div class="price-container">
+                          <div class="formula"></div>
+                          <div class="price">-</div>
+                      </div>
+                    </td>
+                    <td id="mycarFamilyDaily">
+                      <div class="price-container">
+                          <div class="formula"></div>
+                          <div class="price">-</div>
+                      </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>פג'ו 5008 (7 מקומות)</td>
+                    <td id="mycarP5008PerHour">
+                      <div class="price-container">
+                          <div class="formula"></div>
+                          <div class="price">-</div>
+                      </div>
+                    </td>
+                    <td id="mycarP5008Daily">
+                      <div class="price-container">
+                          <div class="formula"></div>
+                          <div class="price">-</div>
+                      </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <!-- End of MyCar Section -->
+
+
         <div class="section-title">
             <h2>רכב קטן - מיטב</h2>
         </div>
@@ -287,7 +354,7 @@
             return document.getElementById("seasonCheckbox").checked;
         }
 
-        // פונקציה לקביעת תעריף ק"מ דינמי
+        // פונקציה לקביעת תעריף ק"מ דינמי - CityCar
 		function getKmRate(carType, kilometers) {
 			switch (carType) {
 				case "c3":
@@ -346,6 +413,31 @@
                 picantoDailyCost += 50;
             }
 
+             // --- Calculate MyCar Prices ---
+             const mycarSmallHourlyRate = 12.90;
+             const mycarSmallHourlyKmRate = 1.5;
+             const mycarSmallDailyBase = 139;
+             const mycarSmallDailyKmRate = 1.0;
+
+             const mycarFamilyHourlyRate = 20.90;
+             const mycarFamilyHourlyKmRate = 1.8;
+             const mycarFamilyDailyBase = 209;
+             const mycarFamilyDailyKmRate = 1.4;
+
+             const mycarP5008HourlyRate = 29.90;
+             const mycarP5008HourlyKmRate = 2.0;
+             const mycarP5008DailyBase = 300;
+             const mycarP5008DailyKmRate = 1.8;
+
+             let mycarSmallPerHourCost = calculatedHours * mycarSmallHourlyRate + kilometers * mycarSmallHourlyKmRate;
+             let mycarSmallDailyCost = (Math.floor(calculatedHours / 24) * mycarSmallDailyBase) + (calculatedHours % 24 > 0 ? mycarSmallDailyBase : 0) + kilometers * mycarSmallDailyKmRate;
+
+             let mycarFamilyPerHourCost = calculatedHours * mycarFamilyHourlyRate + kilometers * mycarFamilyHourlyKmRate;
+             let mycarFamilyDailyCost = (Math.floor(calculatedHours / 24) * mycarFamilyDailyBase) + (calculatedHours % 24 > 0 ? mycarFamilyDailyBase : 0) + kilometers * mycarFamilyDailyKmRate;
+
+             let mycarP5008PerHourCost = calculatedHours * mycarP5008HourlyRate + kilometers * mycarP5008HourlyKmRate;
+             let mycarP5008DailyCost = (Math.floor(calculatedHours / 24) * mycarP5008DailyBase) + (calculatedHours % 24 > 0 ? mycarP5008DailyBase : 0) + kilometers * mycarP5008DailyKmRate;
+
              // --- Calculate Mitav Prices ---
              let smallCarUpTo5HoursCost;
             if (calculatedHours <= 5) {
@@ -385,6 +477,7 @@
                 }
             }
 
+             // Update CityCar
              updateElement("c3PerHour", c3PerHourCost, `${calculatedHours}h * ${c3HourlyRate} + ${kilometers}km * ${getKmRate("c3", kilometers)}`);
             updateElement("c3Daily", c3DailyCost, `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${dailyBaseC3} + ${kilometers}km * ${getKmRate("c3", kilometers)}${isSeason() ? " + 50" : ""}`);
             updateElement("p5008PerHour", p5008PerHourCost, `${calculatedHours}h * ${p5008HourlyRate} + ${kilometers}km * ${getKmRate("p5008", kilometers)}`);
@@ -394,6 +487,16 @@
             updateElement("picantoPerHour", picantoPerHourCost, `${calculatedHours}h * ${picantoHourlyRate} + ${kilometers}km * ${getKmRate("picanto", kilometers)}`);
             updateElement("picantoDaily", picantoDailyCost, `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${picantoDailyBase} + ${kilometers}km * ${getKmRate("picanto", kilometers)}${isSeason() ? " + 50" : ""}`);
 
+              // Update MyCar
+            updateElement("mycarSmallPerHour", mycarSmallPerHourCost, `${calculatedHours}h * ${mycarSmallHourlyRate} + ${kilometers}km * ${mycarSmallHourlyKmRate}`);
+            updateElement("mycarSmallDaily", mycarSmallDailyCost, `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${mycarSmallDailyBase} + ${kilometers}km * ${mycarSmallDailyKmRate}`);
+            updateElement("mycarFamilyPerHour", mycarFamilyPerHourCost, `${calculatedHours}h * ${mycarFamilyHourlyRate} + ${kilometers}km * ${mycarFamilyHourlyKmRate}`);
+            updateElement("mycarFamilyDaily", mycarFamilyDailyCost, `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${mycarFamilyDailyBase} + ${kilometers}km * ${mycarFamilyDailyKmRate}`);
+            updateElement("mycarP5008PerHour", mycarP5008PerHourCost, `${calculatedHours}h * ${mycarP5008HourlyRate} + ${kilometers}km * ${mycarP5008HourlyKmRate}`);
+            updateElement("mycarP5008Daily", mycarP5008DailyCost, `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${mycarP5008DailyBase} + ${kilometers}km * ${mycarP5008DailyKmRate}`);
+
+
+             // Update Mitav
              updateElement("smallCarUpTo5Hours", smallCarUpTo5HoursCost, smallCarUpTo5HoursCost === "לא זמין" ? "לא זמין" : `180 +  ${Math.max(0, kilometers - 200)}km * 1.2 + ${kilometers}km * 0.45`);
              updateElement("smallCarDaily", smallCarDailyCost, smallCarDailyCost === "לא זמין" ? "לא זמין" :`${Math.max(1,Math.floor(calculatedHours / 24))}d * 230 + 230 + ${Math.max(0, kilometers - (250 * (Math.floor(calculatedHours / 24) + 1)))}km * 1.2 + ${kilometers}km * 0.45${isSeason() ? " + 50" : ""}`);
 
@@ -405,6 +508,12 @@
                 { element: document.getElementById("p5008Daily"), value: p5008DailyCost },
                 { element: document.getElementById("picantoPerHour"), value: picantoPerHourCost }, // Picanto always included
                 { element: document.getElementById("picantoDaily"), value: picantoDailyCost }, // Picanto always included
+                { element: document.getElementById("mycarSmallPerHour"), value: mycarSmallPerHourCost },
+                { element: document.getElementById("mycarSmallDaily"), value: mycarSmallDailyCost },
+                { element: document.getElementById("mycarFamilyPerHour"), value: mycarFamilyPerHourCost },
+                { element: document.getElementById("mycarFamilyDaily"), value: mycarFamilyDailyCost },
+                { element: document.getElementById("mycarP5008PerHour"), value: mycarP5008PerHourCost },
+                { element: document.getElementById("mycarP5008Daily"), value: mycarP5008DailyCost },
                 { element: document.getElementById("smallCarUpTo5Hours"), value: smallCarUpTo5HoursCost },
                 { element: document.getElementById("smallCarDaily"), value: smallCarDailyCost }
             ];
@@ -424,7 +533,7 @@
             });
 
              // Filter valid prices and sort
-            const validPrices = allPrices.filter(item => typeof item.value === "number" && item.element); // Ensure element exists
+            const validPrices = allPrices.filter(item => typeof item.value === 'number' && item.element); // Ensure element exists and value is a number
             validPrices.sort((a, b) => a.value - b.value);
 
              // Apply new highlights
