@@ -378,39 +378,42 @@
         function calculate() {
             const hours = parseFloat(document.getElementById("hours").value) || 0;
             const kilometers = parseFloat(document.getElementById("kilometers").value) || 0;
-            let calculatedHours = hours;
+            const calculatedHours = hours; // Keep it simple
+
+             // Calculate number of billable days (any part of a day counts as a full day)
+            const numberOfDays = calculatedHours > 0 ? Math.floor(calculatedHours / 24) + (calculatedHours % 24 > 0 ? 1 : 0) : 0;
 
             // --- Calculate CityCar Prices ---
             const c3HourlyRate = 17.2;
             const dailyBaseC3 = 160;
             let c3PerHourCost = calculatedHours * c3HourlyRate + kilometers * getKmRate("c3", kilometers);
             let c3DailyCost = (Math.floor(calculatedHours / 24) * dailyBaseC3) + (calculatedHours % 24 > 0 ? dailyBaseC3 : 0) + kilometers * getKmRate("c3", kilometers);
-            if (isSeason()) {
-                 c3DailyCost +=  50;
+            if (isSeason() && numberOfDays > 0) {
+                 c3DailyCost += numberOfDays * 50; // Multiply surcharge by number of days
             }
 
             const p5008HourlyRate = 25;
             const dailyBaseP5008 = 250;
             let p5008PerHourCost = calculatedHours * p5008HourlyRate + kilometers * getKmRate("p5008", kilometers);
             let p5008DailyCost = (Math.floor(calculatedHours / 24) * dailyBaseP5008) + (calculatedHours % 24 > 0 ? dailyBaseP5008 : 0) + kilometers * getKmRate("p5008", kilometers);
-            if (isSeason()) {
-                p5008DailyCost += 250;
+            if (isSeason() && numberOfDays > 0) {
+                p5008DailyCost += numberOfDays * 250; // Multiply surcharge by number of days
             }
 
             const nissanMicraHourlyRate = 12.2;
             const nissanMicraDailyBase = 110;
             let nissanMicraPerHourCost = calculatedHours * nissanMicraHourlyRate + kilometers * getKmRate("micra", kilometers);
             let nissanMicraDailyCost = (Math.floor(calculatedHours / 24) * nissanMicraDailyBase) + (calculatedHours % 24 > 0 ? nissanMicraDailyBase : 0) + kilometers * getKmRate("micra", kilometers);
-            if (isSeason()) {
-                nissanMicraDailyCost +=  50;
+            if (isSeason() && numberOfDays > 0) {
+                nissanMicraDailyCost += numberOfDays * 50; // Multiply surcharge by number of days
             }
 
             const picantoHourlyRate = 15.2;
             const picantoDailyBase = 140;
             let picantoPerHourCost = calculatedHours * picantoHourlyRate + kilometers * getKmRate("picanto", kilometers);
             let picantoDailyCost = (Math.floor(calculatedHours / 24) * picantoDailyBase) + (calculatedHours % 24 > 0 ? picantoDailyBase : 0) + kilometers * getKmRate("picanto", kilometers);
-            if (isSeason()) {
-                picantoDailyCost += 50;
+            if (isSeason() && numberOfDays > 0) {
+                picantoDailyCost += numberOfDays * 50; // Multiply surcharge by number of days
             }
 
              // --- Calculate MyCar Prices ---
@@ -450,14 +453,15 @@
             let smallCarDailyCost;
            if (calculatedHours > 0) {
                 const fullDays = Math.floor(calculatedHours / 24);
-                const extraKmBase = 250 * (fullDays + 1);
+                const extraKmBase = 250 * (fullDays + 1); // Mitav specific km allowance
                  const extraKm = Math.max(0, kilometers - extraKmBase );
                smallCarDailyCost = (fullDays * 230) + (230) + (extraKm * 1.2) + (kilometers * 0.45);
            } else {
                 smallCarDailyCost = "לא זמין";
-            }
-            if (isSeason()) {
-                smallCarDailyCost += smallCarDailyCost === "לא זמין" ? 0: 50;
+           }
+            // Apply seasonal surcharge per day for Mitav as well
+            if (isSeason() && smallCarDailyCost !== "לא זמין" && numberOfDays > 0) {
+                smallCarDailyCost += numberOfDays * 50; // Assuming 50 NIS surcharge for Mitav
             }
 
             // --- Update DOM (Display prices and formulas) ---
@@ -477,15 +481,15 @@
                 }
             }
 
-             // Update CityCar
+             // Update CityCar - Including updated seasonal surcharge formula display
              updateElement("c3PerHour", c3PerHourCost, `${calculatedHours}h * ${c3HourlyRate} + ${kilometers}km * ${getKmRate("c3", kilometers)}`);
-            updateElement("c3Daily", c3DailyCost, `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${dailyBaseC3} + ${kilometers}km * ${getKmRate("c3", kilometers)}${isSeason() ? " + 50" : ""}`);
+            updateElement("c3Daily", c3DailyCost, `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${dailyBaseC3} + ${kilometers}km * ${getKmRate("c3", kilometers)}${isSeason() && numberOfDays > 0 ? ` + ${numberOfDays}d * 50` : ""}`);
             updateElement("p5008PerHour", p5008PerHourCost, `${calculatedHours}h * ${p5008HourlyRate} + ${kilometers}km * ${getKmRate("p5008", kilometers)}`);
-            updateElement("p5008Daily", p5008DailyCost, `${Math.max(1,Math.floor(calculatedHours / 24))}d * ${dailyBaseP5008} + ${kilometers}km * ${getKmRate("p5008", kilometers)}${isSeason() ? " + 250" : ""}`);
+            updateElement("p5008Daily", p5008DailyCost, `${Math.max(1,Math.floor(calculatedHours / 24))}d * ${dailyBaseP5008} + ${kilometers}km * ${getKmRate("p5008", kilometers)}${isSeason() && numberOfDays > 0 ? ` + ${numberOfDays}d * 250` : ""}`);
             updateElement("nissanMicraPerHour", nissanMicraPerHourCost, `${calculatedHours}h * ${nissanMicraHourlyRate} + ${kilometers}km * ${getKmRate("micra", kilometers)}`);
-            updateElement("nissanMicraDaily", nissanMicraDailyCost, `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${nissanMicraDailyBase} + ${kilometers}km * ${getKmRate("micra", kilometers)}${isSeason() ? " + 50" : ""}`);
+            updateElement("nissanMicraDaily", nissanMicraDailyCost, `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${nissanMicraDailyBase} + ${kilometers}km * ${getKmRate("micra", kilometers)}${isSeason() && numberOfDays > 0 ? ` + ${numberOfDays}d * 50` : ""}`);
             updateElement("picantoPerHour", picantoPerHourCost, `${calculatedHours}h * ${picantoHourlyRate} + ${kilometers}km * ${getKmRate("picanto", kilometers)}`);
-            updateElement("picantoDaily", picantoDailyCost, `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${picantoDailyBase} + ${kilometers}km * ${getKmRate("picanto", kilometers)}${isSeason() ? " + 50" : ""}`);
+            updateElement("picantoDaily", picantoDailyCost, `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${picantoDailyBase} + ${kilometers}km * ${getKmRate("picanto", kilometers)}${isSeason() && numberOfDays > 0 ? ` + ${numberOfDays}d * 50` : ""}`);
 
               // Update MyCar
             updateElement("mycarSmallPerHour", mycarSmallPerHourCost, `${calculatedHours}h * ${mycarSmallHourlyRate} + ${kilometers}km * ${mycarSmallHourlyKmRate}`);
@@ -496,9 +500,9 @@
             updateElement("mycarP5008Daily", mycarP5008DailyCost, `${Math.max(1, Math.floor(calculatedHours / 24))}d * ${mycarP5008DailyBase} + ${kilometers}km * ${mycarP5008DailyKmRate}`);
 
 
-             // Update Mitav
+             // Update Mitav - Including updated seasonal surcharge formula display
              updateElement("smallCarUpTo5Hours", smallCarUpTo5HoursCost, smallCarUpTo5HoursCost === "לא זמין" ? "לא זמין" : `180 +  ${Math.max(0, kilometers - 200)}km * 1.2 + ${kilometers}km * 0.45`);
-             updateElement("smallCarDaily", smallCarDailyCost, smallCarDailyCost === "לא זמין" ? "לא זמין" :`${Math.max(1,Math.floor(calculatedHours / 24))}d * 230 + 230 + ${Math.max(0, kilometers - (250 * (Math.floor(calculatedHours / 24) + 1)))}km * 1.2 + ${kilometers}km * 0.45${isSeason() ? " + 50" : ""}`);
+             updateElement("smallCarDaily", smallCarDailyCost, smallCarDailyCost === "לא זמין" ? "לא זמין" :`${Math.max(1,Math.floor(calculatedHours / 24))}d * 230 + 230 + ${Math.max(0, kilometers - (250 * (Math.floor(calculatedHours / 24) + 1)))}km * 1.2 + ${kilometers}km * 0.45${isSeason() && numberOfDays > 0 ? ` + ${numberOfDays}d * 50` : ""}`);
 
               // --- Highlight Prices ---
               let allPrices = [
