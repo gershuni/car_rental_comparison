@@ -48,9 +48,9 @@
         </div>
 
         <div class="input-container">
-            <div class="input-group" id="hoursInputContainer"> <label for="hours">מספר שעות:</label> <input type="number" id="hours" placeholder="הכנס שעות" oninput="calculate()"> </div>
-            <div class="input-group hidden-col" id="daysInputContainer"> <label for="days">מספר ימים (שלמים):</label> <input type="number" id="days" placeholder="הכנס ימים" oninput="calculate()"> </div>
-            <div class="input-group"> <label for="kilometers">מספר קילומטרים:</label> <input type="number" id="kilometers" placeholder="הכנס קילומטרים" oninput="calculate()"> </div>
+            <div class="input-group" id="hoursInputContainer"> <label for="hours">מספר שעות:</label> <input type="number" id="hours" placeholder="הכנס שעות" oninput="calculate()" min="0"> </div>
+            <div class="input-group hidden-col" id="daysInputContainer"> <label for="days">מספר ימים (שלמים):</label> <input type="number" id="days" placeholder="הכנס ימים" oninput="calculate()" min="0"> </div>
+            <div class="input-group"> <label for="kilometers">מספר קילומטרים:</label> <input type="number" id="kilometers" placeholder="הכנס קילומטרים" oninput="calculate()" min="0"> </div>
         </div>
 
         <div id="seasonCheckboxContainer"> <label for="seasonCheckbox">תוספת עונה?</label> <input type="checkbox" id="seasonCheckbox" onchange="calculate()"> </div>
@@ -89,7 +89,7 @@
 
         <div id="mitavSection" class="hidden-section">
             <div class="section-title"> <h2>רכב קטן - מיטב</h2> </div>
-            <p style="font-size: 0.9em; color: gray;">(משוער...)</p>
+            <p style="font-size: 0.9em; color: gray;">(משוער - תלוי בעלות התדלוק; מחושב לפי עלות תדלוק של 45 אג' לק"מ. שימו לב! תחויבו בתוספת 50 ש"ח על ביטול השתתפות עצמית אם לא תבקשו במפורש לפני ההזמנה!)</p>
             <table>
                 <thead> <tr> <th>אפשרות</th> <th>עלות</th> </tr> </thead>
                 <tbody>
@@ -101,6 +101,103 @@
     </div>
 
     <script>
+        // ===================================================================================
+        // CONFIGURATION AREA - EDIT PRICES AND SETTINGS HERE
+        // ===================================================================================
+
+        // --- Pricing Logic Helper Functions (Specific to CityCar KM calculation) ---
+        function getKmRate(carType, kilometers) {
+            switch (carType) {
+                case "c3": case "micra": case "picanto":
+                    if (kilometers <= 29) return 2.3; if (kilometers <= 59) return 1.9; if (kilometers <= 119) return 1.5; if (kilometers <= 499) return 1.1; return 0.9;
+                case "p5008":
+                    if (kilometers <= 59) return 2.5; if (kilometers <= 119) return 2.1; if (kilometers <= 499) return 1.6; return 1.4;
+                default: return 0;
+            }
+        }
+
+        function getCityCarKmCeilingInfo(carType, kilometers) {
+            let nextTierMinKm, nextTierRate;
+            if (carType === "c3" || carType === "micra" || carType === "picanto") {
+                if (kilometers <= 29) { nextTierMinKm = 30; nextTierRate = 1.9; } else if (kilometers <= 59) { nextTierMinKm = 60; nextTierRate = 1.5; } else if (kilometers <= 119) { nextTierMinKm = 120; nextTierRate = 1.1; } else if (kilometers <= 499) { nextTierMinKm = 500; nextTierRate = 0.9; } else { return null; }
+            } else if (carType === "p5008") {
+                if (kilometers <= 59) { nextTierMinKm = 60; nextTierRate = 2.1; } else if (kilometers <= 119) { nextTierMinKm = 120; nextTierRate = 1.6; } else if (kilometers <= 499) { nextTierMinKm = 500; nextTierRate = 1.4; } else { return null; }
+            } else { return null; }
+            if (!nextTierMinKm) return null;
+            return { ceilingKmCost: nextTierMinKm * nextTierRate, nextTierMinKm, nextTierRate };
+        }
+
+        function getCityCarKmCostDetails(carType, kilometers) {
+            const currentRate = getKmRate(carType, kilometers); const rawKmCost = kilometers * currentRate; let effectiveKmCost = rawKmCost;
+            let formulaString = `${kilometers}ק"מ * ${currentRate.toFixed(1)}`;
+            const ceilingInfo = getCityCarKmCeilingInfo(carType, kilometers);
+            if (ceilingInfo && kilometers > 0 && rawKmCost > ceilingInfo.ceilingKmCost) {
+                effectiveKmCost = ceilingInfo.ceilingKmCost;
+                formulaString = `${effectiveKmCost.toFixed(0)}₪ (תקרה: ${ceilingInfo.nextTierMinKm}ק"מ*${ceilingInfo.nextTierRate.toFixed(1)})`;
+            }
+            return { cost: effectiveKmCost, formula: formulaString };
+        }
+
+        // --- Central Pricing Configuration Object ---
+        const pricingConfig = {
+            citycar_picanto: {
+                company: 'citycar', sectionId: 'citycarSection', carType: 'picanto',
+                hourlyRate: 15.2, dailyBase: 140, seasonSurcharge: 50,
+                kmCostFunc: getCityCarKmCostDetails, // Referencing the function directly
+                hourlyElementId: 'citycar_picanto_hourly', dailyElementId: 'citycar_picanto_daily'
+            },
+            citycar_c3: {
+                company: 'citycar', sectionId: 'citycarSection', carType: 'c3',
+                hourlyRate: 17.2, dailyBase: 160, seasonSurcharge: 50,
+                kmCostFunc: getCityCarKmCostDetails,
+                hourlyElementId: 'citycar_c3_hourly', dailyElementId: 'citycar_c3_daily'
+            },
+            citycar_p5008: {
+                company: 'citycar', sectionId: 'citycarSection', carType: 'p5008',
+                hourlyRate: 25, dailyBase: 250, seasonSurcharge: 250,
+                kmCostFunc: getCityCarKmCostDetails,
+                hourlyElementId: 'citycar_p5008_hourly', dailyElementId: 'citycar_p5008_daily'
+            },
+            citycar_micra: {
+                company: 'citycar', sectionId: 'citycarSection', carType: 'micra', isAdditional: true,
+                hourlyRate: 12.2, dailyBase: 110, seasonSurcharge: 50,
+                kmCostFunc: getCityCarKmCostDetails,
+                hourlyElementId: 'citycar_micra_hourly', dailyElementId: 'citycar_micra_daily'
+            },
+            mycar_small: {
+                company: 'mycar', sectionId: 'mycarSection',
+                hourlyRate: 12.90, hourlyKmRate: 1.5,
+                dailyBase: 139, dailyKmRate: 1.0,
+                hourlyElementId: 'mycar_small_hourly', dailyElementId: 'mycar_small_daily'
+            },
+            mycar_family: {
+                company: 'mycar', sectionId: 'mycarSection',
+                hourlyRate: 20.90, hourlyKmRate: 1.8,
+                dailyBase: 209, dailyKmRate: 1.4,
+                hourlyElementId: 'mycar_family_hourly', dailyElementId: 'mycar_family_daily'
+            },
+            mycar_p5008: {
+                company: 'mycar', sectionId: 'mycarSection',
+                hourlyRate: 29.90, hourlyKmRate: 2.0,
+                dailyBase: 300, dailyKmRate: 1.8,
+                hourlyElementId: 'mycar_p5008_hourly', dailyElementId: 'mycar_p5008_daily'
+            },
+            mitav_upto5: {
+                company: 'mitav', sectionId: 'mitavSection', isHourlyOnly: true,
+                hourlyElementId: 'mitav_upto5_hourly',
+            },
+            mitav_daily_calc: {
+                company: 'mitav', sectionId: 'mitavSection', isDailyOnly: true,
+                dailyElementId: 'mitav_daily_calc_daily',
+                seasonSurcharge: 50
+            }
+        };
+
+        // ===================================================================================
+        // END OF CONFIGURATION AREA
+        // ===================================================================================
+
+
         // --- Application State ---
         const appState = {
             inputMode: 'hours',
@@ -123,77 +220,29 @@
         const seasonCheckboxEl = document.getElementById("seasonCheckbox");
         const additionalCarsRow1El = document.getElementById("additionalCarsRow1");
 
-        // --- Pricing Configuration ---
-        const pricingConfig = {
-            citycar_picanto: {
-                company: 'citycar', sectionId: 'citycarSection', carType: 'picanto',
-                hourlyRate: 15.2, dailyBase: 140, seasonSurcharge: 50,
-                kmCostFunc: (km) => getCityCarKmCostDetails('picanto', km),
-                hourlyElementId: 'citycar_picanto_hourly', dailyElementId: 'citycar_picanto_daily'
-            },
-            citycar_c3: {
-                company: 'citycar', sectionId: 'citycarSection', carType: 'c3',
-                hourlyRate: 17.2, dailyBase: 160, seasonSurcharge: 50,
-                kmCostFunc: (km) => getCityCarKmCostDetails('c3', km),
-                hourlyElementId: 'citycar_c3_hourly', dailyElementId: 'citycar_c3_daily'
-            },
-            citycar_p5008: {
-                company: 'citycar', sectionId: 'citycarSection', carType: 'p5008',
-                hourlyRate: 25, dailyBase: 250, seasonSurcharge: 250,
-                kmCostFunc: (km) => getCityCarKmCostDetails('p5008', km),
-                hourlyElementId: 'citycar_p5008_hourly', dailyElementId: 'citycar_p5008_daily'
-            },
-            citycar_micra: {
-                company: 'citycar', sectionId: 'citycarSection', carType: 'micra', isAdditional: true,
-                hourlyRate: 12.2, dailyBase: 110, seasonSurcharge: 50,
-                kmCostFunc: (km) => getCityCarKmCostDetails('micra', km),
-                hourlyElementId: 'citycar_micra_hourly', dailyElementId: 'citycar_micra_daily'
-            },
-            mycar_small: {
-                company: 'mycar', sectionId: 'mycarSection',
-                hourlyRate: 12.90, hourlyKmRate: 1.5,
-                dailyBase: 139, dailyKmRate: 1.0,
-                hourlyElementId: 'mycar_small_hourly', dailyElementId: 'mycar_small_daily'
-            },
-            mycar_family: {
-                company: 'mycar', sectionId: 'mycarSection',
-                hourlyRate: 20.90, hourlyKmRate: 1.8,
-                dailyBase: 209, dailyKmRate: 1.4,
-                hourlyElementId: 'mycar_family_hourly', dailyElementId: 'mycar_family_daily'
-            },
-            mycar_p5008: {
-                company: 'mycar', sectionId: 'mycarSection',
-                hourlyRate: 29.90, hourlyKmRate: 2.0,
-                dailyBase: 300, dailyKmRate: 1.8,
-                hourlyElementId: 'mycar_p5008_hourly', dailyElementId: 'mycar_p5008_daily'
-            },
-            mitav_upto5: {
-                company: 'mitav', sectionId: 'mitavSection', isHourlyOnly: true, // Special case for Mitav up to 5 hours
-                hourlyElementId: 'mitav_upto5_hourly',
-                // Calculation logic will be specific in calculateCarCosts
-            },
-            mitav_daily_calc: { // Renamed from mitav_daily to avoid confusion with a car model
-                company: 'mitav', sectionId: 'mitavSection', isDailyOnly: true, // Special case for Mitav daily
-                dailyElementId: 'mitav_daily_calc_daily',
-                seasonSurcharge: 50
-                 // Calculation logic will be specific in calculateCarCosts
-            }
-        };
-
-
-        // --- Visibility & Input Mode ---
+        /**
+         * Toggles the visibility of a company's section in the UI.
+         * @param {string} companyKey - The key for the company in appState.visibility (e.g., 'mycar').
+         * @param {string} sectionId - The ID of the HTML section element for the company.
+         */
         function toggleCompanyVisibility(companyKey, sectionId) {
             appState.visibility[companyKey] = document.getElementById(`toggle${companyKey.charAt(0).toUpperCase() + companyKey.slice(1)}`).checked;
             document.getElementById(sectionId).classList.toggle(CLASS_HIDDEN_SECTION, !appState.visibility[companyKey]);
             calculate();
         }
 
+        /**
+         * Toggles the visibility of additional cars for CityCar.
+         */
         function toggleAdditionalCitycar() {
             appState.visibility.citycarAdditional = !appState.visibility.citycarAdditional;
             additionalCarsRow1El.classList.toggle(CLASS_HIDDEN_ROW, !appState.visibility.citycarAdditional);
             calculate();
         }
 
+        /**
+         * Handles changes in the input mode (hours vs. days).
+         */
         function handleInputModeChange() {
             appState.inputMode = document.getElementById("modeHours").checked ? 'hours' : 'days';
             document.getElementById("hoursInputContainer").classList.toggle(CLASS_HIDDEN_COL, appState.inputMode !== 'hours');
@@ -203,47 +252,32 @@
             calculate();
         }
 
-        // --- Pricing Logic Helpers ---
+        /**
+         * Checks if the seasonal surcharge is active.
+         * @returns {boolean} True if seasonal surcharge is active, false otherwise.
+         */
         function isSeason() { return seasonCheckboxEl.checked; }
 
-		function getKmRate(carType, kilometers) { /* ... (same as before) ... */
-			switch (carType) {
-				case "c3": case "micra": case "picanto":
-					if (kilometers <= 29) return 2.3; if (kilometers <= 59) return 1.9; if (kilometers <= 119) return 1.5; if (kilometers <= 499) return 1.1; return 0.9;
-				case "p5008":
-					if (kilometers <= 59) return 2.5; if (kilometers <= 119) return 2.1; if (kilometers <= 499) return 1.6; return 1.4;
-				default: return 0;
-			}
-		}
-        function getCityCarKmCeilingInfo(carType, kilometers) { /* ... (same as before) ... */
-            let nextTierMinKm, nextTierRate;
-            if (carType === "c3" || carType === "micra" || carType === "picanto") {
-                if (kilometers <= 29) { nextTierMinKm = 30; nextTierRate = 1.9; } else if (kilometers <= 59) { nextTierMinKm = 60; nextTierRate = 1.5; } else if (kilometers <= 119) { nextTierMinKm = 120; nextTierRate = 1.1; } else if (kilometers <= 499) { nextTierMinKm = 500; nextTierRate = 0.9; } else { return null; }
-            } else if (carType === "p5008") {
-                if (kilometers <= 59) { nextTierMinKm = 60; nextTierRate = 2.1; } else if (kilometers <= 119) { nextTierMinKm = 120; nextTierRate = 1.6; } else if (kilometers <= 499) { nextTierMinKm = 500; nextTierRate = 1.4; } else { return null; }
-            } else { return null; }
-            return { ceilingKmCost: nextTierMinKm * nextTierRate, nextTierMinKm, nextTierRate };
-        }
-        function getCityCarKmCostDetails(carType, kilometers) { /* ... (same as before) ... */
-            const currentRate = getKmRate(carType, kilometers); const rawKmCost = kilometers * currentRate; let effectiveKmCost = rawKmCost;
-            let formulaString = `${kilometers}ק"מ * ${currentRate.toFixed(1)}`;
-            const ceilingInfo = getCityCarKmCeilingInfo(carType, kilometers);
-            if (ceilingInfo && kilometers > 0 && rawKmCost > ceilingInfo.ceilingKmCost) {
-                effectiveKmCost = ceilingInfo.ceilingKmCost;
-                formulaString = `${effectiveKmCost.toFixed(0)}₪ (תקרה: ${ceilingInfo.nextTierMinKm}ק"מ*${ceilingInfo.nextTierRate.toFixed(1)})`;
-            }
-            return { cost: effectiveKmCost, formula: formulaString };
-        }
 
-
-        // --- Generic Car Cost Calculation ---
+        /**
+         * Calculates the cost for a specific car rental option based on its configuration.
+         * @param {object} config - The pricing configuration object for the car.
+         * @param {number} hours - The number of rental hours input by the user.
+         * @param {number} days - The calculated number of billable days.
+         * @param {number} km - The kilometers driven.
+         * @param {boolean} seasonActive - Whether the seasonal surcharge is active.
+         * @param {string} timeUnitChar - Character representing the time unit ('ש' or 'י').
+         * @param {number} formulaTimeValue - The time value to use in formulas (either hours or days input).
+         * @param {number} displayedDaysForFormula - The number of days to display in daily formulas.
+         * @returns {{hourly: {price: number|string, formula: string}, daily: {price: number|string, formula: string}}}
+         */
         function calculateCarCosts(config, hours, days, km, seasonActive, timeUnitChar, formulaTimeValue, displayedDaysForFormula) {
             let hourly = { price: 0, formula: "" };
             let daily = { price: 0, formula: "" };
+            // Pass carType to kmCostFunc if it exists, otherwise just km for generic cases (not currently used but good for future)
+            const kmDetails = config.kmCostFunc ? config.kmCostFunc(config.carType, km) : { cost: 0, formula: `${km}ק"מ` };
 
-            const kmDetails = config.kmCostFunc ? config.kmCostFunc(km) : { cost: 0, formula: `${km}ק"מ` };
 
-            // Mitav Special Cases
             if (config.company === 'mitav') {
                 if (config.isHourlyOnly) { // upto5
                     if (appState.inputMode === 'hours' && hours > 0 && hours <= 5) {
@@ -253,7 +287,7 @@
                     } else {
                         hourly.price = "לא זמין"; hourly.formula = "לא זמין";
                     }
-                    return { hourly, daily: { price: "לא רלוונטי", formula: "לא רלוונטי"} }; // Daily not applicable for this Mitav option
+                    return { hourly, daily: { price: "לא רלוונטי", formula: "לא רלוונטי"} };
                 } else if (config.isDailyOnly) { // daily_calc
                     if (days > 0) {
                         const mitavBaseDailyCost = days * 230;
@@ -268,7 +302,7 @@
                     } else {
                         daily.price = "לא זמין"; daily.formula = "לא זמין";
                     }
-                     if (hours === 0 && days === 0 && daily.price !== "לא זמין") daily.price = 0;
+                     if (hours === 0 && days === 0 && daily.price !== "לא זמין") daily.price = 0; // Corrected hours here
                     return { hourly: { price: "לא רלוונטי", formula: "לא רלוונטי"}, daily };
                 }
             }
@@ -303,10 +337,12 @@
                     daily.formula += ` + ${days}י * ${config.seasonSurcharge}`;
                 }
             }
-            
-            if (hours === 0 && days === 0) { // Reset if no time input
-                if (hourly.price !== "לא זמין") hourly.price = 0;
-                if (daily.price !== "לא זמין") daily.price = 0;
+
+            // If no hours/days input, reset calculated prices to 0 (unless "לא זמין")
+            const noTimeInput = (appState.inputMode === 'hours' && hours === 0) || (appState.inputMode === 'days' && days === 0);
+             if (noTimeInput && km === 0) { // only if KM is also 0
+                if (hourly.price !== "לא זמין" && hourly.price !== "לא רלוונטי") hourly.price = 0;
+                if (daily.price !== "לא זמין" && daily.price !== "לא רלוונטי") daily.price = 0;
             }
 
 
@@ -314,8 +350,12 @@
         }
 
 
-        // --- DOM Update & Highlighting ---
-        function updateElement(elementId, priceData) { /* ... (same as before, but now receives priceData object) ... */
+        /**
+         * Updates a specific DOM element with the calculated price and formula.
+         * @param {string} elementId - The ID of the HTML TD element to update.
+         * @param {{price: number|string, formula: string}} priceData - An object containing the price and formula string.
+         */
+        function updateElement(elementId, priceData) {
             const element = document.getElementById(elementId);
             if (!element) return;
             const priceDiv = element.querySelector(".price");
@@ -326,8 +366,7 @@
             const hoursVal = parseFloat(hoursInputEl.value) || 0;
             const daysVal = parseFloat(daysInputEl.value) || 0;
             const kmVal = parseFloat(kilometersInputEl.value) || 0;
-            const noTimeOrKmInput = ( (appState.inputMode === 'hours' && hoursVal === 0) || (appState.inputMode === 'days' && daysVal === 0) ) && kmVal === 0;
-
+            const noTimeOrKmInput = ((appState.inputMode === 'hours' && hoursVal === 0) || (appState.inputMode === 'days' && daysVal === 0)) && kmVal === 0;
 
             if (noTimeOrKmInput) {
                 if (displayPrice !== "לא זמין" && displayPrice !== "לא רלוונטי") displayPrice = 0;
@@ -340,7 +379,11 @@
             if (formulaDiv) formulaDiv.textContent = displayFormula;
         }
 
-        function highlightPrices(allPrices) { /* ... (same as before) ... */
+        /**
+         * Highlights the lowest, second lowest, and third lowest prices among the visible options.
+         * @param {Array<object>} allPrices - An array of objects, each with `element` (DOM TD element) and `value` (price).
+         */
+        function highlightPrices(allPrices) {
             allPrices.forEach(item => {
                 if (item.element && !item.element.classList.contains(CLASS_HIDDEN_COL) && !item.element.closest(`.${CLASS_HIDDEN_SECTION}`)) {
                     item.element.classList.remove(HIGHLIGHT_LOWEST, HIGHLIGHT_SECOND, HIGHLIGHT_THIRD);
@@ -355,11 +398,22 @@
             if (validPrices.length > 2 && !(noTimeOrKmInput && validPrices[2].value === 0)) validPrices[2].element.classList.add(HIGHLIGHT_THIRD);
         }
 
-        // --- Main Calculation Function ---
+        /**
+         * Main function to calculate and display all rental prices.
+         * Triggered on input changes.
+         */
         function calculate() {
-            const hoursValue = parseFloat(hoursInputEl.value) || 0;
-            const daysValue = parseFloat(daysInputEl.value) || 0;
-            const kilometersValue = parseFloat(kilometersInputEl.value) || 0;
+            const hoursRaw = hoursInputEl.value;
+            const daysRaw = daysInputEl.value;
+            const kmRaw = kilometersInputEl.value;
+
+            if ((hoursRaw && !/^\d*\.?\d*$/.test(hoursRaw)) || (daysRaw && !/^\d+$/.test(daysRaw)) || (kmRaw && !/^\d*\.?\d*$/.test(kmRaw))) {
+                return; // Basic validation: exit if non-numeric input
+            }
+
+            const hoursValue = parseFloat(hoursRaw) || 0;
+            const daysValue = parseFloat(daysRaw) || 0;
+            const kilometersValue = parseFloat(kmRaw) || 0;
             const seasonActive = isSeason();
 
             let calculatedHours = appState.inputMode === 'hours' ? hoursValue : daysValue * 24;
@@ -373,20 +427,20 @@
 
             for (const carId in pricingConfig) {
                 const config = pricingConfig[carId];
-
-                // Skip if company section is hidden or if it's an additional car and not visible
                 if (!appState.visibility[config.company] || (config.isAdditional && !appState.visibility.citycarAdditional)) {
-                    // Ensure elements are cleared if they become hidden
-                    if (config.hourlyElementId && document.getElementById(config.hourlyElementId)) updateElement(config.hourlyElementId, {price: 0, formula: "..."});
-                    if (config.dailyElementId && document.getElementById(config.dailyElementId)) updateElement(config.dailyElementId, {price: 0, formula: "..."});
+                     // Clear display for hidden elements
+                    if (config.hourlyElementId && document.getElementById(config.hourlyElementId)) {
+                        updateElement(config.hourlyElementId, { price: 0, formula: appState.inputMode === 'hours' ? '0ש * ...' : '...'});
+                    }
+                    if (config.dailyElementId && document.getElementById(config.dailyElementId)) {
+                         updateElement(config.dailyElementId, { price: 0, formula: appState.inputMode === 'days' ? '0י * ...' : '...'});
+                    }
                     continue;
                 }
-
                 const costs = calculateCarCosts(config, hoursValue, numberOfDays, kilometersValue, seasonActive, timeUnitChar, formulaTimeValue, displayedDaysForFormula);
-
                 if (config.hourlyElementId && costs.hourly.price !== "לא רלוונטי") {
                     updateElement(config.hourlyElementId, costs.hourly);
-                    if (appState.inputMode === 'hours' || config.isHourlyOnly) { // Add to highlight list if relevant
+                    if (appState.inputMode === 'hours' || config.isHourlyOnly) {
                         allPrices.push({ element: document.getElementById(config.hourlyElementId), value: costs.hourly.price });
                     }
                 }
@@ -401,14 +455,18 @@
         // --- Event Listeners & Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
             Object.keys(appState.visibility).forEach(key => {
-                if (key !== 'citycar' && key !== 'citycarAdditional') { // citycar is always visible initially
-                    document.getElementById(`${key}Section`).classList.add(CLASS_HIDDEN_SECTION);
-                    document.getElementById(`toggle${key.charAt(0).toUpperCase() + key.slice(1)}`).checked = false;
+                if (key !== 'citycar' && key !== 'citycarAdditional') {
+                    const sectionEl = document.getElementById(`${key}Section`);
+                    if (sectionEl) sectionEl.classList.add(CLASS_HIDDEN_SECTION);
+                    const toggleEl = document.getElementById(`toggle${key.charAt(0).toUpperCase() + key.slice(1)}`);
+                    if (toggleEl) toggleEl.checked = false;
                 }
             });
-            handleInputModeChange();
-            document.querySelector('.upto5-cell').classList.add(PER_HOUR_COL_CLASS);
-            // calculate(); // Called by handleInputModeChange
+            // Ensure uptofive cell also adheres to column visibility
+            const upto5Cell = document.querySelector('.upto5-cell');
+            if (upto5Cell) upto5Cell.classList.add(PER_HOUR_COL_CLASS);
+
+            handleInputModeChange(); // This will also call calculate()
         });
     </script>
 </body>
