@@ -31,8 +31,8 @@
         .price-container { position: relative; text-align: center; }
         .formula { font-size: 0.7em; color: gray; position: absolute; top: 2px; left: 50%; transform: translateX(-50%); width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .price { padding-top: 1.5em; }
-        #seasonCheckboxContainer { margin-top: 15px; margin-bottom: 15px; text-align: center; display: flex; align-items: center; justify-content: center; }
-        #seasonCheckboxContainer label { margin-bottom: 0; margin-right: 5px; }
+        #seasonCheckboxContainer, #promotionCheckboxContainer { margin-top: 10px; margin-bottom: 10px; text-align: center; display: flex; align-items: center; justify-content: center; }
+        #seasonCheckboxContainer label, #promotionCheckboxContainer label { margin-bottom: 0; margin-right: 5px; }
     </style>
 </head>
 <body>
@@ -54,6 +54,9 @@
         </div>
 
         <div id="seasonCheckboxContainer"> <label for="seasonCheckbox">תוספת עונה?</label> <input type="checkbox" id="seasonCheckbox" onchange="calculate()"> </div>
+        <div id="promotionCheckboxContainer">
+            <!-- Promotion checkbox will be injected here by JavaScript if active -->
+        </div>
 
         <div class="visibility-toggles">
             <input type="checkbox" id="toggleCitycar" checked disabled> <label for="toggleCitycar" style="color:grey;">הצג סיטיקאר</label>
@@ -102,6 +105,28 @@
 
     <script>
         // ===================================================================================
+        // PROMOTION CONFIGURATION (TO REMOVE/DEACTIVATE, DELETE THIS OBJECT OR SET isActive TO false)
+        // ===================================================================================
+        const promotionConfig = {
+            isActive: true, // Set to false or remove/comment out this whole object to deactivate
+            id: "promotionMay22Checkbox", // A unique ID for the checkbox element
+            label: 'מבצע 22/5-22/5 החל מ-99 ש"ח ליום', // Label for the checkbox
+            // Define daily promotional prices: carId maps to { dailyBase, dailyKmRate }
+            dailyPrices: {
+                "citycar_micra":    { dailyBase: 99,  dailyKmRate: 1.0 },
+                "citycar_picanto":  { dailyBase: 129, dailyKmRate: 1.0 }, // Covers פיקנטו, ספייס סטאר, יונדאי i10, פיג'ו 208 from promo
+                "citycar_c3":       { dailyBase: 139, dailyKmRate: 1.0 }, // סיטרואן סי 3 from promo
+                "citycar_p5008":    { dailyBase: 239, dailyKmRate: 1.6 }  // פיג'ו 5008 (קטגוריה P) from promo
+                // Add other car IDs from pricingConfig below if they have promotional daily prices.
+                // Example: "mycar_small": { dailyBase: 100, dailyKmRate: 0.8 }
+            }
+        };
+        // ===================================================================================
+        // END OF PROMOTION CONFIGURATION
+        // ===================================================================================
+
+
+        // ===================================================================================
         // CONFIGURATION AREA - EDIT PRICES AND SETTINGS HERE
         // ===================================================================================
 
@@ -143,7 +168,7 @@
             citycar_picanto: {
                 company: 'citycar', sectionId: 'citycarSection', carType: 'picanto',
                 hourlyRate: 15.2, dailyBase: 140, seasonSurcharge: 50,
-                kmCostFunc: getCityCarKmCostDetails, // Referencing the function directly
+                kmCostFunc: getCityCarKmCostDetails,
                 hourlyElementId: 'citycar_picanto_hourly', dailyElementId: 'citycar_picanto_daily'
             },
             citycar_c3: {
@@ -176,7 +201,7 @@
                 dailyBase: 209, dailyKmRate: 1.4,
                 hourlyElementId: 'mycar_family_hourly', dailyElementId: 'mycar_family_daily'
             },
-            mycar_p5008: {
+            mycar_p5008: { // MyCar's Peugeot 5008, distinct from CityCar's
                 company: 'mycar', sectionId: 'mycarSection',
                 hourlyRate: 29.90, hourlyKmRate: 2.0,
                 dailyBase: 300, dailyKmRate: 1.8,
@@ -220,29 +245,18 @@
         const seasonCheckboxEl = document.getElementById("seasonCheckbox");
         const additionalCarsRow1El = document.getElementById("additionalCarsRow1");
 
-        /**
-         * Toggles the visibility of a company's section in the UI.
-         * @param {string} companyKey - The key for the company in appState.visibility (e.g., 'mycar').
-         * @param {string} sectionId - The ID of the HTML section element for the company.
-         */
         function toggleCompanyVisibility(companyKey, sectionId) {
             appState.visibility[companyKey] = document.getElementById(`toggle${companyKey.charAt(0).toUpperCase() + companyKey.slice(1)}`).checked;
             document.getElementById(sectionId).classList.toggle(CLASS_HIDDEN_SECTION, !appState.visibility[companyKey]);
             calculate();
         }
 
-        /**
-         * Toggles the visibility of additional cars for CityCar.
-         */
         function toggleAdditionalCitycar() {
             appState.visibility.citycarAdditional = !appState.visibility.citycarAdditional;
             additionalCarsRow1El.classList.toggle(CLASS_HIDDEN_ROW, !appState.visibility.citycarAdditional);
             calculate();
         }
 
-        /**
-         * Handles changes in the input mode (hours vs. days).
-         */
         function handleInputModeChange() {
             appState.inputMode = document.getElementById("modeHours").checked ? 'hours' : 'days';
             document.getElementById("hoursInputContainer").classList.toggle(CLASS_HIDDEN_COL, appState.inputMode !== 'hours');
@@ -252,34 +266,30 @@
             calculate();
         }
 
-        /**
-         * Checks if the seasonal surcharge is active.
-         * @returns {boolean} True if seasonal surcharge is active, false otherwise.
-         */
         function isSeason() { return seasonCheckboxEl.checked; }
 
-
         /**
-         * Calculates the cost for a specific car rental option based on its configuration.
+         * Calculates the cost for a specific car rental option.
          * @param {object} config - The pricing configuration object for the car.
+         * @param {string} carId - The unique identifier for the car (key from pricingConfig).
          * @param {number} hours - The number of rental hours input by the user.
          * @param {number} days - The calculated number of billable days.
          * @param {number} km - The kilometers driven.
          * @param {boolean} seasonActive - Whether the seasonal surcharge is active.
+         * @param {boolean} promotionActiveForCalc - Whether the promotion checkbox is checked and promotion is active.
          * @param {string} timeUnitChar - Character representing the time unit ('ש' or 'י').
          * @param {number} formulaTimeValue - The time value to use in formulas (either hours or days input).
          * @param {number} displayedDaysForFormula - The number of days to display in daily formulas.
          * @returns {{hourly: {price: number|string, formula: string}, daily: {price: number|string, formula: string}}}
          */
-        function calculateCarCosts(config, hours, days, km, seasonActive, timeUnitChar, formulaTimeValue, displayedDaysForFormula) {
+        function calculateCarCosts(config, carId, hours, days, km, seasonActive, promotionActiveForCalc, timeUnitChar, formulaTimeValue, displayedDaysForFormula) {
             let hourly = { price: 0, formula: "" };
             let daily = { price: 0, formula: "" };
-            // Pass carType to kmCostFunc if it exists, otherwise just km for generic cases (not currently used but good for future)
-            const kmDetails = config.kmCostFunc ? config.kmCostFunc(config.carType, km) : { cost: 0, formula: `${km}ק"מ` };
-
+            const kmDetails = config.kmCostFunc ? config.kmCostFunc(config.carType, km) : { cost: km * (config.dailyKmRate || 0), formula: `${km}ק"מ * ${config.dailyKmRate || 0}` };
 
             if (config.company === 'mitav') {
-                if (config.isHourlyOnly) { // upto5
+                // Mitav logic remains unchanged by this promotion
+                if (config.isHourlyOnly) {
                     if (appState.inputMode === 'hours' && hours > 0 && hours <= 5) {
                         const extraKm = Math.max(0, km - 200);
                         hourly.price = 180 + (extraKm * 1.2) + (km * 0.45);
@@ -288,7 +298,7 @@
                         hourly.price = "לא זמין"; hourly.formula = "לא זמין";
                     }
                     return { hourly, daily: { price: "לא רלוונטי", formula: "לא רלוונטי"} };
-                } else if (config.isDailyOnly) { // daily_calc
+                } else if (config.isDailyOnly) {
                     if (days > 0) {
                         const mitavBaseDailyCost = days * 230;
                         const extraKmBaseMitav = 250 * days;
@@ -302,12 +312,12 @@
                     } else {
                         daily.price = "לא זמין"; daily.formula = "לא זמין";
                     }
-                     if (hours === 0 && days === 0 && daily.price !== "לא זמין") daily.price = 0; // Corrected hours here
+                     if (hours === 0 && days === 0 && daily.price !== "לא זמין") daily.price = 0;
                     return { hourly: { price: "לא רלוונטי", formula: "לא רלוונטי"}, daily };
                 }
             }
 
-            // Hourly Calculation (if applicable)
+            // Hourly Calculation (if applicable) - Not affected by this specific daily promotion
             if (appState.inputMode === 'hours' && config.hourlyRate !== undefined && !config.isDailyOnly) {
                 hourly.price = hours * config.hourlyRate;
                 hourly.formula = `${formulaTimeValue}${timeUnitChar} * ${config.hourlyRate.toFixed(2)}`;
@@ -322,39 +332,48 @@
 
             // Daily Calculation (if applicable)
             if (config.dailyBase !== undefined && !config.isHourlyOnly) {
-                daily.price = days * config.dailyBase;
-                daily.formula = `${displayedDaysForFormula}י * ${config.dailyBase}`;
-                if (config.dailyKmRate) { // MyCar style
-                    daily.price += km * config.dailyKmRate;
-                    daily.formula += ` + ${km}ק"מ * ${config.dailyKmRate.toFixed(1)}`;
-                } else { // CityCar style
-                    daily.price += kmDetails.cost;
-                    daily.formula += ` + ${kmDetails.formula}`;
+                const promoPriceDetails = (typeof promotionConfig !== 'undefined' && promotionConfig.isActive && promotionConfig.dailyPrices && promotionConfig.dailyPrices[carId])
+                                         ? promotionConfig.dailyPrices[carId]
+                                         : null;
+
+                if (promotionActiveForCalc && promoPriceDetails) {
+                    // Use promotion prices
+                    daily.price = days * promoPriceDetails.dailyBase + km * promoPriceDetails.dailyKmRate;
+                    let kmRateDisplay = promoPriceDetails.dailyKmRate.toString();
+                    if (promoPriceDetails.dailyKmRate % 1 === 0) {
+                        kmRateDisplay = promoPriceDetails.dailyKmRate.toFixed(0);
+                    } else {
+                        kmRateDisplay = parseFloat(promoPriceDetails.dailyKmRate.toFixed(2)).toString(); // e.g. 1.6, not 1.60
+                    }
+                    daily.formula = `${displayedDaysForFormula}י * ${promoPriceDetails.dailyBase} + ${km}ק"מ * ${kmRateDisplay}`;
+                } else {
+                    // Use regular prices
+                    daily.price = days * config.dailyBase;
+                    daily.formula = `${displayedDaysForFormula}י * ${config.dailyBase}`;
+                    if (config.dailyKmRate) { // MyCar style
+                        daily.price += km * config.dailyKmRate;
+                        daily.formula += ` + ${km}ק"מ * ${config.dailyKmRate.toFixed(1)}`;
+                    } else { // CityCar style
+                        daily.price += kmDetails.cost;
+                        daily.formula += ` + ${kmDetails.formula}`;
+                    }
                 }
 
+                // Apply season surcharge (applies on top of regular or promo daily rate if applicable)
                 if (seasonActive && days > 0 && config.seasonSurcharge) {
                     daily.price += days * config.seasonSurcharge;
                     daily.formula += ` + ${days}י * ${config.seasonSurcharge}`;
                 }
             }
 
-            // If no hours/days input, reset calculated prices to 0 (unless "לא זמין")
             const noTimeInput = (appState.inputMode === 'hours' && hours === 0) || (appState.inputMode === 'days' && days === 0);
-             if (noTimeInput && km === 0) { // only if KM is also 0
+             if (noTimeInput && km === 0) {
                 if (hourly.price !== "לא זמין" && hourly.price !== "לא רלוונטי") hourly.price = 0;
                 if (daily.price !== "לא זמין" && daily.price !== "לא רלוונטי") daily.price = 0;
             }
-
-
             return { hourly, daily };
         }
 
-
-        /**
-         * Updates a specific DOM element with the calculated price and formula.
-         * @param {string} elementId - The ID of the HTML TD element to update.
-         * @param {{price: number|string, formula: string}} priceData - An object containing the price and formula string.
-         */
         function updateElement(elementId, priceData) {
             const element = document.getElementById(elementId);
             if (!element) return;
@@ -379,10 +398,6 @@
             if (formulaDiv) formulaDiv.textContent = displayFormula;
         }
 
-        /**
-         * Highlights the lowest, second lowest, and third lowest prices among the visible options.
-         * @param {Array<object>} allPrices - An array of objects, each with `element` (DOM TD element) and `value` (price).
-         */
         function highlightPrices(allPrices) {
             allPrices.forEach(item => {
                 if (item.element && !item.element.classList.contains(CLASS_HIDDEN_COL) && !item.element.closest(`.${CLASS_HIDDEN_SECTION}`)) {
@@ -398,23 +413,24 @@
             if (validPrices.length > 2 && !(noTimeOrKmInput && validPrices[2].value === 0)) validPrices[2].element.classList.add(HIGHLIGHT_THIRD);
         }
 
-        /**
-         * Main function to calculate and display all rental prices.
-         * Triggered on input changes.
-         */
         function calculate() {
             const hoursRaw = hoursInputEl.value;
             const daysRaw = daysInputEl.value;
             const kmRaw = kilometersInputEl.value;
 
             if ((hoursRaw && !/^\d*\.?\d*$/.test(hoursRaw)) || (daysRaw && !/^\d+$/.test(daysRaw)) || (kmRaw && !/^\d*\.?\d*$/.test(kmRaw))) {
-                return; // Basic validation: exit if non-numeric input
+                return;
             }
 
             const hoursValue = parseFloat(hoursRaw) || 0;
             const daysValue = parseFloat(daysRaw) || 0;
             const kilometersValue = parseFloat(kmRaw) || 0;
             const seasonActive = isSeason();
+
+            // Check promotion status
+            const promotionCheckboxEl = (typeof promotionConfig !== 'undefined' && promotionConfig.id) ? document.getElementById(promotionConfig.id) : null;
+            const promotionActiveForCalc = (typeof promotionConfig !== 'undefined' && promotionConfig.isActive && promotionCheckboxEl && promotionCheckboxEl.checked);
+
 
             let calculatedHours = appState.inputMode === 'hours' ? hoursValue : daysValue * 24;
             let numberOfDays = appState.inputMode === 'hours' ? (calculatedHours > 0 ? Math.floor(calculatedHours / 24) + (calculatedHours % 24 > 0 ? 1 : 0) : 0) : daysValue;
@@ -428,7 +444,6 @@
             for (const carId in pricingConfig) {
                 const config = pricingConfig[carId];
                 if (!appState.visibility[config.company] || (config.isAdditional && !appState.visibility.citycarAdditional)) {
-                     // Clear display for hidden elements
                     if (config.hourlyElementId && document.getElementById(config.hourlyElementId)) {
                         updateElement(config.hourlyElementId, { price: 0, formula: appState.inputMode === 'hours' ? '0ש * ...' : '...'});
                     }
@@ -437,7 +452,7 @@
                     }
                     continue;
                 }
-                const costs = calculateCarCosts(config, hoursValue, numberOfDays, kilometersValue, seasonActive, timeUnitChar, formulaTimeValue, displayedDaysForFormula);
+                const costs = calculateCarCosts(config, carId, hoursValue, numberOfDays, kilometersValue, seasonActive, promotionActiveForCalc, timeUnitChar, formulaTimeValue, displayedDaysForFormula);
                 if (config.hourlyElementId && costs.hourly.price !== "לא רלוונטי") {
                     updateElement(config.hourlyElementId, costs.hourly);
                     if (appState.inputMode === 'hours' || config.isHourlyOnly) {
@@ -452,7 +467,6 @@
             highlightPrices(allPrices);
         }
 
-        // --- Event Listeners & Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
             Object.keys(appState.visibility).forEach(key => {
                 if (key !== 'citycar' && key !== 'citycarAdditional') {
@@ -462,11 +476,31 @@
                     if (toggleEl) toggleEl.checked = false;
                 }
             });
-            // Ensure uptofive cell also adheres to column visibility
             const upto5Cell = document.querySelector('.upto5-cell');
             if (upto5Cell) upto5Cell.classList.add(PER_HOUR_COL_CLASS);
 
-            handleInputModeChange(); // This will also call calculate()
+            // Dynamically add promotion checkbox if promotion is active
+            const promotionCheckboxContainerEl = document.getElementById("promotionCheckboxContainer");
+            if (typeof promotionConfig !== 'undefined' && promotionConfig.isActive && promotionConfig.id && promotionConfig.label && promotionCheckboxContainerEl) {
+                const promoCheckbox = document.createElement('input');
+                promoCheckbox.type = 'checkbox';
+                promoCheckbox.id = promotionConfig.id;
+                promoCheckbox.onchange = calculate;
+
+                const promoLabel = document.createElement('label');
+                promoLabel.htmlFor = promoCheckbox.id;
+                promoLabel.textContent = promotionConfig.label;
+                // promoLabel.style.marginRight = "5px"; // Already handled by container style
+
+                promotionCheckboxContainerEl.appendChild(promoCheckbox); // Checkbox first for standard LTR label association
+                promotionCheckboxContainerEl.appendChild(promoLabel); // Then label
+            } else if (promotionCheckboxContainerEl) {
+                // If promotion is not active or misconfigured, ensure the container is empty or removed
+                promotionCheckboxContainerEl.innerHTML = ''; // Clear it
+                // Alternatively, remove it: promotionCheckboxContainerEl.remove();
+            }
+
+            handleInputModeChange();
         });
     </script>
 </body>
