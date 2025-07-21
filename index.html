@@ -53,7 +53,7 @@
             <div class="input-group"> <label for="kilometers">מספר קילומטרים:</label> <input type="number" id="kilometers" placeholder="הכנס קילומטרים" oninput="calculate()" min="0"> </div>
         </div>
 
-        <div id="seasonCheckboxContainer" style="display: none;"> <label for="seasonCheckbox">תוספת עונה?</label> <input type="checkbox" id="seasonCheckbox" onchange="calculate()"> </div>
+        <div id="seasonCheckboxContainer"> <input type="checkbox" id="seasonCheckbox" onchange="calculate()"> <label for="seasonCheckbox">תוספת עונה (י' אב 04/08 עד ל' אב 24/08)</label> </div>
         <div id="promotionCheckboxContainer">
             </div>
 
@@ -166,25 +166,29 @@
         const pricingConfig = {
             citycar_picanto: {
                 company: 'citycar', sectionId: 'citycarSection', carType: 'picanto',
-                hourlyRate: 15.2, dailyBase: 140, dailyKmRate: 1.0, seasonSurcharge: 50,
+                hourlyRate: 15.2, dailyBase: 140, dailyKmRate: 1.0, 
+                seasonSurcharge: 50, seasonHourlySurcharge: 3,
                 kmCostFunc: getCityCarKmCostDetails,
                 hourlyElementId: 'citycar_picanto_hourly', dailyElementId: 'citycar_picanto_daily'
             },
             citycar_c3: {
                 company: 'citycar', sectionId: 'citycarSection', carType: 'c3',
-                hourlyRate: 17.2, dailyBase: 160, dailyKmRate: 1.0, seasonSurcharge: 50,
+                hourlyRate: 17.2, dailyBase: 160, dailyKmRate: 1.0, 
+                seasonSurcharge: 50, seasonHourlySurcharge: 3,
                 kmCostFunc: getCityCarKmCostDetails,
                 hourlyElementId: 'citycar_c3_hourly', dailyElementId: 'citycar_c3_daily'
             },
             citycar_p5008: {
                 company: 'citycar', sectionId: 'citycarSection', carType: 'p5008',
-                hourlyRate: 25, dailyBase: 250, dailyKmRate: 1.0, seasonSurcharge: 250,
+                hourlyRate: 25, dailyBase: 250, dailyKmRate: 1.0, 
+                seasonSurcharge: 190, seasonHourlySurcharge: 19,
                 kmCostFunc: getCityCarKmCostDetails,
                 hourlyElementId: 'citycar_p5008_hourly', dailyElementId: 'citycar_p5008_daily'
             },
             citycar_micra: {
                 company: 'citycar', sectionId: 'citycarSection', carType: 'micra', isAdditional: true,
-                hourlyRate: 12.2, dailyBase: 110, dailyKmRate: 1.0, seasonSurcharge: 50,
+                hourlyRate: 12.2, dailyBase: 110, dailyKmRate: 1.0, 
+                seasonSurcharge: 50, seasonHourlySurcharge: 3,
                 kmCostFunc: getCityCarKmCostDetails,
                 hourlyElementId: 'citycar_micra_hourly', dailyElementId: 'citycar_micra_daily'
             },
@@ -287,7 +291,7 @@
             const kmDetails = config.kmCostFunc ? config.kmCostFunc(config.carType, km) : { cost: km * (config.dailyKmRate || 0), formula: `${km}ק"מ * ${config.dailyKmRate || 0}` };
 
             if (config.company === 'mitav') {
-                // Mitav logic remains unchanged by this promotion
+                // Mitav logic remains unchanged
                 if (config.isHourlyOnly) {
                     if (appState.inputMode === 'hours' && hours > 0 && hours <= 5) {
                         const extraKm = Math.max(0, km - 200);
@@ -306,7 +310,7 @@
                         daily.formula = `${displayedDaysForFormula}י * 230 + ${extraKmMitav}ק"מ * 1.2 + ${km}ק"מ * 0.45`;
                         if (seasonActive && config.seasonSurcharge) {
                             daily.price += days * config.seasonSurcharge;
-                            daily.formula += ` + ${days}י * ${config.seasonSurcharge}`;
+                            daily.formula += ` + ${days}י * ${config.seasonSurcharge} (עונה)`;
                         }
                     } else {
                         daily.price = "לא זמין"; daily.formula = "לא זמין";
@@ -316,7 +320,7 @@
                 }
             }
 
-            // Hourly Calculation (if applicable) - Not affected by this specific daily promotion
+            // Hourly Calculation (if applicable)
             if (appState.inputMode === 'hours' && config.hourlyRate !== undefined && !config.isDailyOnly) {
                 hourly.price = hours * config.hourlyRate;
                 hourly.formula = `${formulaTimeValue}${timeUnitChar} * ${config.hourlyRate.toFixed(2)}`;
@@ -326,6 +330,11 @@
                 } else { // CityCar style
                     hourly.price += kmDetails.cost;
                     hourly.formula += ` + ${kmDetails.formula}`;
+                }
+                // Apply season surcharge for hourly rate
+                if (seasonActive && hours > 0 && config.seasonHourlySurcharge) {
+                    hourly.price += hours * config.seasonHourlySurcharge;
+                    hourly.formula += ` + ${formulaTimeValue}${timeUnitChar} * ${config.seasonHourlySurcharge} (עונה)`;
                 }
             }
 
@@ -365,10 +374,10 @@
                     daily.formula = formulaParts.join(' + ');
                 }
 
-                // Apply season surcharge (applies on top of regular or promo daily rate if applicable)
+                // Apply season surcharge for daily rate
                 if (seasonActive && days > 0 && config.seasonSurcharge) {
                     daily.price += days * config.seasonSurcharge;
-                    daily.formula += ` + ${days}י * ${config.seasonSurcharge}`;
+                    daily.formula += ` + ${days}י * ${config.seasonSurcharge} (עונה)`;
                 }
             }
 
