@@ -162,6 +162,39 @@
             return { cost: effectiveKmCost, formula: formulaString };
         }
 
+        // --- Pricing Logic Helper Functions (Specific to MyCar KM calculation) ---
+        function getMyCarKmCostDetails(carType, kilometers) {
+            let cost = 0;
+            let rate = 0;
+            let cap = null;
+            let formulaStr = "";
+
+            if (carType === "small") {
+                if (kilometers <= 49) { rate = 1.9; cap = 75; }
+                else if (kilometers <= 99) { rate = 1.5; cap = 100; }
+                else { rate = 1.0; cap = null; }
+            } else if (carType === "family") {
+                if (kilometers <= 49) { rate = 2.2; cap = 85; }
+                else if (kilometers <= 99) { rate = 1.7; cap = 140; }
+                else { rate = 1.4; cap = null; }
+            } else if (carType === "p5008") {
+                if (kilometers <= 49) { rate = 2.4; cap = 110; }
+                else if (kilometers <= 99) { rate = 2.2; cap = 180; }
+                else { rate = 1.8; cap = null; }
+            }
+
+            let rawCost = kilometers * rate;
+            if (cap !== null && rawCost > cap) {
+                cost = cap;
+                formulaStr = `${cost}₪ (תקרה)`;
+            } else {
+                cost = rawCost;
+                formulaStr = `${kilometers}ק"מ * ${rate.toFixed(1)}`;
+            }
+
+            return { cost: cost, formula: formulaStr };
+        }
+
         // --- Central Pricing Configuration Object ---
         const pricingConfig = {
             citycar_picanto: {
@@ -193,27 +226,30 @@
                 hourlyElementId: 'citycar_micra_hourly', dailyElementId: 'citycar_micra_daily'
             },
             mycar_small: {
-                company: 'mycar', sectionId: 'mycarSection',
-                hourlyRate: 14.90, hourlyKmRate: 1.5,
+                company: 'mycar', sectionId: 'mycarSection', carType: 'small',
+                hourlyRate: 14.90, 
                 dailyBase: 139, dailyKmRate: 1.0,
                 seasonHourlySurcharge: 3.00, // 17.90 - 14.90
                 seasonSurcharge: 50.00,       // 189 - 139
+                kmCostFunc: getMyCarKmCostDetails,
                 hourlyElementId: 'mycar_small_hourly', dailyElementId: 'mycar_small_daily'
             },
             mycar_family: {
-                company: 'mycar', sectionId: 'mycarSection',
-                hourlyRate: 22.90, hourlyKmRate: 1.8,
+                company: 'mycar', sectionId: 'mycarSection', carType: 'family',
+                hourlyRate: 22.90, 
                 dailyBase: 209, dailyKmRate: 1.4,
                 seasonHourlySurcharge: 3.00, // 25.90 - 22.90
                 seasonSurcharge: 50.00,       // 259 - 209
+                kmCostFunc: getMyCarKmCostDetails,
                 hourlyElementId: 'mycar_family_hourly', dailyElementId: 'mycar_family_daily'
             },
-            mycar_p5008: { // MyCar's Peugeot 5008, distinct from CityCar's
-                company: 'mycar', sectionId: 'mycarSection',
-                hourlyRate: 31.90, hourlyKmRate: 2.0,
+            mycar_p5008: { // MyCar's Peugeot 5008
+                company: 'mycar', sectionId: 'mycarSection', carType: 'p5008',
+                hourlyRate: 31.90, 
                 dailyBase: 300, dailyKmRate: 1.8,
                 seasonHourlySurcharge: 20.00, // 51.90 - 31.90
                 seasonSurcharge: 300.00,      // 600 - 300
+                kmCostFunc: getMyCarKmCostDetails,
                 hourlyElementId: 'mycar_p5008_hourly', dailyElementId: 'mycar_p5008_daily'
             },
             mitav_upto5: {
@@ -330,10 +366,10 @@
             if (appState.inputMode === 'hours' && config.hourlyRate !== undefined && !config.isDailyOnly) {
                 hourly.price = hours * config.hourlyRate;
                 hourly.formula = `${formulaTimeValue}${timeUnitChar} * ${config.hourlyRate.toFixed(2)}`;
-                if (config.hourlyKmRate) { // MyCar style
+                if (config.hourlyKmRate) { // Old MyCar style (now unused, but kept for logic safety)
                     hourly.price += km * config.hourlyKmRate;
                     hourly.formula += ` + ${km}ק"מ * ${config.hourlyKmRate.toFixed(1)}`;
-                } else { // CityCar style
+                } else { // CityCar style & New MyCar style
                     hourly.price += kmDetails.cost;
                     hourly.formula += ` + ${kmDetails.formula}`;
                 }
@@ -526,5 +562,3 @@
     </script>
 </body>
 </html>
-
-
