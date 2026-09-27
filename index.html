@@ -33,6 +33,10 @@
         .price { padding-top: 1.5em; }
         #seasonCheckboxContainer, #promotionCheckboxContainer { margin-top: 10px; margin-bottom: 10px; text-align: center; display: flex; align-items: center; justify-content: center; }
         #seasonCheckboxContainer label, #promotionCheckboxContainer label { margin-bottom: 0; margin-right: 5px; }
+        #citycarOptions { margin: 10px auto 15px auto; padding: 10px; border: 1px solid #e3d7f0; border-radius: 6px; background-color: #faf6fd; text-align: center; }
+        #citycarOptions .option-line { margin: 6px 0; }
+        #citycarOptions select { padding: 4px 6px; margin-right: 5px; }
+        #citycarOptions .note { font-size: 0.8em; color: gray; }
     </style>
 </head>
 <body>
@@ -57,6 +61,26 @@
         <div id="promotionCheckboxContainer">
             </div>
 
+        <div id="citycarOptions">
+            <div class="option-line">
+                <label for="clubLevel">דרגת מועדון סגול (סיטיקאר):</label>
+                <select id="clubLevel" onchange="calculate()">
+                    <option value="none">ללא / מתחיל / מתקדם</option>
+                    <option value="mobil">מוביל (מעל 1000 ק"מ ב-3 חודשים)</option>
+                    <option value="master">מאסטר (מעל 1500 ק"מ ב-3 חודשים)</option>
+                </select>
+                <div class="note">הטבת מועדון: מחיר מקסימום לק"מ בתעריף השעתי, והנחה על תוספת העונה (מוביל 20%, מאסטר עד 50%)</div>
+            </div>
+            <div class="option-line">
+                <input type="checkbox" id="insuranceCheckbox" onchange="calculate()">
+                <label for="insuranceCheckbox">הפחתת השתתפות עצמית ל-300 ₪ (סיטיקאר: 5 ₪ לשעה / 50 ₪ ליום, 7 מקומות: 10/100)</label>
+            </div>
+            <div class="option-line">
+                <input type="checkbox" id="longTermCheckbox" onchange="toggleLongTermColumns()">
+                <label for="longTermCheckbox">הצג מסלולי שבוע/חודש (סיטיקאר)</label>
+            </div>
+        </div>
+
         <div class="visibility-toggles">
             <input type="checkbox" id="toggleCitycar" checked disabled> <label for="toggleCitycar" style="color:grey;">הצג סיטיקאר</label>
             <input type="checkbox" id="toggleMycar" onchange="toggleCompanyVisibility('mycar', 'mycarSection')"> <label for="toggleMycar">הצג מייקאר</label>
@@ -66,12 +90,15 @@
         <div id="citycarSection">
             <div class="section-title"> <h2><a href="https://www.citycar.co.il/price_list_screen" target="_blank">סיטיקאר</a></h2> </div>
             <table>
-                <thead> <tr> <th>רכב</th> <th class="per-hour-col">לפי שעה</th> <th>יומי</th> </tr> </thead>
+                <thead> <tr> <th>רכב</th> <th class="per-hour-col">לפי שעה</th> <th>יומי</th> <th class="long-term-col hidden-col">שבועי</th> <th class="long-term-col hidden-col">חודשי</th> </tr> </thead>
                 <tbody>
-                    <tr data-car-id="citycar_picanto"> <td>פיקנטו/ספייס סטאר/i10</td> <td id="citycar_picanto_hourly" class="per-hour-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_picanto_daily"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> </tr>
-                    <tr data-car-id="citycar_c3"> <td>סיטרואן C3 (5 מקומות)</td> <td id="citycar_c3_hourly" class="per-hour-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_c3_daily"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> </tr>
-                    <tr data-car-id="citycar_p5008"> <td>פיג'ו 5008 (7 מקומות)</td> <td id="citycar_p5008_hourly" class="per-hour-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_p5008_daily"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> </tr>
-                    <tr data-car-id="citycar_micra" class="hidden-row" id="additionalCarsRow1"> <td>ניסאן מיקרה</td> <td id="citycar_micra_hourly" class="per-hour-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_micra_daily"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> </tr>
+                    <tr data-car-id="citycar_picanto"> <td>פיקנטו/ספייס סטאר/i10</td> <td id="citycar_picanto_hourly" class="per-hour-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_picanto_daily"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_picanto_weekly" class="long-term-col hidden-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_picanto_monthly" class="long-term-col hidden-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> </tr>
+                    <tr data-car-id="citycar_c3"> <td>סיטרואן C3 / דאציה לוגאן (5 מקומות)</td> <td id="citycar_c3_hourly" class="per-hour-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_c3_daily"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_c3_weekly" class="long-term-col hidden-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_c3_monthly" class="long-term-col hidden-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> </tr>
+                    <tr data-car-id="citycar_p5008"> <td>פיג'ו 5008 (7 מקומות)</td> <td id="citycar_p5008_hourly" class="per-hour-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_p5008_daily"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_p5008_weekly" class="long-term-col hidden-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_p5008_monthly" class="long-term-col hidden-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> </tr>
+                    <tr data-car-id="citycar_micra" class="hidden-row additional-car-row"> <td>ניסאן מיקרה / פיג'ו 208</td> <td id="citycar_micra_hourly" class="per-hour-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_micra_daily"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_micra_weekly" class="long-term-col hidden-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_micra_monthly" class="long-term-col hidden-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> </tr>
+                    <tr data-car-id="citycar_duster" class="hidden-row additional-car-row"> <td>משפחתי - דאציה דאסטר / מיצובישי אטראז</td> <td id="citycar_duster_hourly" class="per-hour-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_duster_daily"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_duster_weekly" class="long-term-col hidden-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_duster_monthly" class="long-term-col hidden-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> </tr>
+                    <tr data-car-id="citycar_familyplus" class="hidden-row additional-car-row"> <td>משפחתי פלוס - קיה סלטוס/ניסאן סנטרה/מזדה CX-5</td> <td id="citycar_familyplus_hourly" class="per-hour-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_familyplus_daily"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_familyplus_weekly" class="long-term-col hidden-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_familyplus_monthly" class="long-term-col hidden-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> </tr>
+                    <tr data-car-id="citycar_sorento" class="hidden-row additional-car-row"> <td>קיה סורנטו / צ'רי טיגו 8 (7 מקומות)</td> <td id="citycar_sorento_hourly" class="per-hour-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_sorento_daily"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_sorento_weekly" class="long-term-col hidden-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> <td id="citycar_sorento_monthly" class="long-term-col hidden-col"> <div class="price-container"> <div class="formula"></div> <div class="price">-</div> </div> </td> </tr>
                 </tbody>
             </table>
             <button id="additionalCarsButton" onclick="toggleAdditionalCitycar()">רכבים נוספים</button>
@@ -107,7 +134,7 @@
         // PROMOTION CONFIGURATION (TO REMOVE/DEACTIVATE, DELETE THIS OBJECT OR SET isActive TO false)
         // ===================================================================================
         const promotionConfig = {
-            isActive: true, // Set to false or remove/comment out this whole object to deactivate
+            isActive: false, // Set to false or remove/comment out this whole object to deactivate
             id: "promotionMay22Checkbox", // A unique ID for the checkbox element
             label: 'מבצע נובמבר 2025 החל מ-99 ש"ח ליום', // Label for the checkbox
             // Define daily promotional prices: carId maps to { dailyBase, dailyKmRate }
@@ -129,37 +156,40 @@
         // CONFIGURATION AREA - EDIT PRICES AND SETTINGS HERE
         // ===================================================================================
 
-        // --- Pricing Logic Helper Functions (Specific to CityCar KM calculation) ---
-        function getKmRate(carType, kilometers) {
-            switch (carType) {
-                case "c3": case "micra": case "picanto":
-                    if (kilometers <= 29) return 2.3; if (kilometers <= 59) return 1.9; if (kilometers <= 119) return 1.5; if (kilometers <= 499) return 1.1; return 0.9;
-                case "p5008":
-                    if (kilometers <= 59) return 2.5; if (kilometers <= 119) return 2.1; if (kilometers <= 499) return 1.6; return 1.4;
-                default: return 0;
-            }
-        }
+        // --- CityCar KM tiers for the hourly route (source: citycar.co.il price list, 09/2026) ---
+        // The tier rate applies to all km from the first km. `cap` is the maximum charge within the tier
+        // (= the cost of the next tier's first km count). `club` is the מועדון סגול maximum rate per km.
+        const CITYCAR_KM_TIERS = {
+            small: [ // קטן / מרווח / משפחתי / משפחתי פלוס
+                { upTo: 29,       rate: 2.3, cap: 57,   club: { mobil: 1.7, master: 1.5 } },
+                { upTo: 59,       rate: 1.9, cap: 90,   club: { mobil: 1.7, master: 1.5 } },
+                { upTo: 119,      rate: 1.5, cap: 132,  club: { mobil: 1.5, master: 1.5 } },
+                { upTo: Infinity, rate: 1.1, cap: null, club: {} }
+            ],
+            minivan: [ // 7 מקומות
+                { upTo: 59,       rate: 2.5, cap: 126,  club: { mobil: 2.2, master: 2.0 } },
+                { upTo: 119,      rate: 2.1, cap: 192,  club: { mobil: 2.1, master: 2.0 } },
+                { upTo: Infinity, rate: 1.6, cap: null, club: {} }
+            ]
+        };
 
-        function getCityCarKmCeilingInfo(carType, kilometers) {
-            let nextTierMinKm, nextTierRate;
-            if (carType === "c3" || carType === "micra" || carType === "picanto") {
-                if (kilometers <= 29) { nextTierMinKm = 30; nextTierRate = 1.9; } else if (kilometers <= 59) { nextTierMinKm = 60; nextTierRate = 1.5; } else if (kilometers <= 119) { nextTierMinKm = 120; nextTierRate = 1.1; } else if (kilometers <= 499) { nextTierMinKm = 500; nextTierRate = 0.9; } else { return null; }
-            } else if (carType === "p5008") {
-                if (kilometers <= 59) { nextTierMinKm = 60; nextTierRate = 2.1; } else if (kilometers <= 119) { nextTierMinKm = 120; nextTierRate = 1.6; } else if (kilometers <= 499) { nextTierMinKm = 500; nextTierRate = 1.4; } else { return null; }
-            } else { return null; }
-            if (!nextTierMinKm) return null;
-            return { ceilingKmCost: nextTierMinKm * nextTierRate, nextTierMinKm, nextTierRate };
-        }
+        // --- מועדון סגול settings ---
+        // Season surcharge discount per club level ("בדרגה הגבוהה עד 50% הנחה, בדרגה הבינונית 20%").
+        const CLUB_SEASON_DISCOUNT = { none: 0, mobil: 0.2, master: 0.5 };
+        const CLUB_LEVEL_NAMES = { none: '', mobil: 'מוביל', master: 'מאסטר' };
 
-        function getCityCarKmCostDetails(carType, kilometers) {
-            const currentRate = getKmRate(carType, kilometers); const rawKmCost = kilometers * currentRate; let effectiveKmCost = rawKmCost;
-            let formulaString = `${kilometers}ק"מ * ${currentRate.toFixed(1)}`;
-            const ceilingInfo = getCityCarKmCeilingInfo(carType, kilometers);
-            if (ceilingInfo && kilometers > 0 && rawKmCost > ceilingInfo.ceilingKmCost) {
-                effectiveKmCost = ceilingInfo.ceilingKmCost;
-                formulaString = `${effectiveKmCost.toFixed(0)}₪ (תקרה: ${ceilingInfo.nextTierMinKm}ק"מ*${ceilingInfo.nextTierRate.toFixed(1)})`;
+        function getCityCarKmCostDetails(carType, kilometers, config) {
+            const tiers = CITYCAR_KM_TIERS[config.kmTiers];
+            const tier = tiers.find(t => kilometers <= t.upTo);
+            const clubLevel = getClubLevel();
+            const clubRate = tier.club[clubLevel];
+            const rate = (clubRate !== undefined && clubRate < tier.rate) ? clubRate : tier.rate;
+            const clubNote = rate < tier.rate ? ' (מועדון)' : '';
+            const rawCost = kilometers * rate;
+            if (tier.cap !== null && kilometers > 0 && rawCost > tier.cap) {
+                return { cost: tier.cap, formula: `${tier.cap}₪ (תקרה)` };
             }
-            return { cost: effectiveKmCost, formula: formulaString };
+            return { cost: rawCost, formula: `${kilometers}ק"מ * ${rate.toFixed(1)}${clubNote}` };
         }
 
         // --- Pricing Logic Helper Functions (Specific to MyCar KM calculation) ---
@@ -198,32 +228,67 @@
         // --- Central Pricing Configuration Object ---
         const pricingConfig = {
             citycar_picanto: {
-                company: 'citycar', sectionId: 'citycarSection', carType: 'picanto',
-                hourlyRate: 15.2, dailyBase: 140, dailyKmRate: 1.0, 
+                company: 'citycar', sectionId: 'citycarSection', carType: 'picanto', kmTiers: 'small',
+                hourlyRate: 15.2, dailyBase: 140, dailyKmRate: 1.0,
+                weekly: { base: 810, kmRate: 0.95 }, monthly: { base: 3450, kmRate: 0.9 },
                 seasonSurcharge: 50, seasonHourlySurcharge: 3,
+                insurance: { hour: 5, day: 50 },
                 kmCostFunc: getCityCarKmCostDetails,
                 hourlyElementId: 'citycar_picanto_hourly', dailyElementId: 'citycar_picanto_daily'
             },
             citycar_c3: {
-                company: 'citycar', sectionId: 'citycarSection', carType: 'c3',
-                hourlyRate: 17.2, dailyBase: 160, dailyKmRate: 1.0, 
+                company: 'citycar', sectionId: 'citycarSection', carType: 'c3', kmTiers: 'small',
+                hourlyRate: 17.2, dailyBase: 160, dailyKmRate: 1.0,
+                weekly: { base: 920, kmRate: 0.95 }, monthly: { base: 3750, kmRate: 0.9 },
                 seasonSurcharge: 50, seasonHourlySurcharge: 3,
+                insurance: { hour: 5, day: 50 },
                 kmCostFunc: getCityCarKmCostDetails,
                 hourlyElementId: 'citycar_c3_hourly', dailyElementId: 'citycar_c3_daily'
             },
             citycar_p5008: {
-                company: 'citycar', sectionId: 'citycarSection', carType: 'p5008',
-                hourlyRate: 25, dailyBase: 250, dailyKmRate: 1.6, 
-                seasonSurcharge: 190, seasonHourlySurcharge: 19,
+                company: 'citycar', sectionId: 'citycarSection', carType: 'p5008', kmTiers: 'minivan',
+                hourlyRate: 25, dailyBase: 250, dailyKmRate: 1.6,
+                weekly: { base: 1460, kmRate: 1.3 }, monthly: { base: 4850, kmRate: 1.0 },
+                seasonSurcharge: 95, seasonHourlySurcharge: 19,
+                insurance: { hour: 10, day: 100 },
                 kmCostFunc: getCityCarKmCostDetails,
                 hourlyElementId: 'citycar_p5008_hourly', dailyElementId: 'citycar_p5008_daily'
             },
             citycar_micra: {
-                company: 'citycar', sectionId: 'citycarSection', carType: 'micra', isAdditional: true,
-                hourlyRate: 12.2, dailyBase: 110, dailyKmRate: 1.0, 
-                seasonSurcharge: 50, seasonHourlySurcharge: 3,
+                company: 'citycar', sectionId: 'citycarSection', carType: 'micra', kmTiers: 'small', isAdditional: true,
+                hourlyRate: 12.2, dailyBase: 110, dailyKmRate: 1.0,
+                weekly: { base: 620, kmRate: 0.95 }, monthly: { base: 2450, kmRate: 0.9 },
+                seasonSurcharge: 55, seasonHourlySurcharge: 3,
+                insurance: { hour: 5, day: 50 },
                 kmCostFunc: getCityCarKmCostDetails,
                 hourlyElementId: 'citycar_micra_hourly', dailyElementId: 'citycar_micra_daily'
+            },
+            citycar_duster: {
+                company: 'citycar', sectionId: 'citycarSection', carType: 'duster', kmTiers: 'small', isAdditional: true,
+                hourlyRate: 15.2, dailyBase: 160, dailyKmRate: 1.0,
+                weekly: { base: 920, kmRate: 0.95 }, monthly: { base: 3550, kmRate: 0.9 },
+                seasonSurcharge: 55, seasonHourlySurcharge: 3,
+                insurance: { hour: 5, day: 50 },
+                kmCostFunc: getCityCarKmCostDetails,
+                hourlyElementId: 'citycar_duster_hourly', dailyElementId: 'citycar_duster_daily'
+            },
+            citycar_familyplus: {
+                company: 'citycar', sectionId: 'citycarSection', carType: 'familyplus', kmTiers: 'small', isAdditional: true,
+                hourlyRate: 21, dailyBase: 210, dailyKmRate: 1.1,
+                weekly: { base: 1230, kmRate: 1.0 }, monthly: { base: 4350, kmRate: 0.9 },
+                seasonSurcharge: 85, seasonHourlySurcharge: 6,
+                insurance: { hour: 5, day: 50 },
+                kmCostFunc: getCityCarKmCostDetails,
+                hourlyElementId: 'citycar_familyplus_hourly', dailyElementId: 'citycar_familyplus_daily'
+            },
+            citycar_sorento: {
+                company: 'citycar', sectionId: 'citycarSection', carType: 'sorento', kmTiers: 'minivan', isAdditional: true,
+                hourlyRate: 30, dailyBase: 300, dailyKmRate: 1.6,
+                weekly: { base: 1760, kmRate: 1.45 }, monthly: { base: 5600, kmRate: 1.3 },
+                seasonSurcharge: 145, seasonHourlySurcharge: 19,
+                insurance: { hour: 10, day: 100 },
+                kmCostFunc: getCityCarKmCostDetails,
+                hourlyElementId: 'citycar_sorento_hourly', dailyElementId: 'citycar_sorento_daily'
             },
             mycar_small: {
                 company: 'mycar', sectionId: 'mycarSection', carType: 'small',
@@ -271,7 +336,8 @@
         // --- Application State ---
         const appState = {
             inputMode: 'hours',
-            visibility: { citycar: true, mycar: false, mitav: false, citycarAdditional: false }
+            visibility: { citycar: true, mycar: false, mitav: false, citycarAdditional: false },
+            showLongTerm: false
         };
 
         // --- Constants ---
@@ -288,7 +354,9 @@
         const daysInputEl = document.getElementById("days");
         const kilometersInputEl = document.getElementById("kilometers");
         const seasonCheckboxEl = document.getElementById("seasonCheckbox");
-        const additionalCarsRow1El = document.getElementById("additionalCarsRow1");
+        const clubLevelEl = document.getElementById("clubLevel");
+        const insuranceCheckboxEl = document.getElementById("insuranceCheckbox");
+        const longTermCheckboxEl = document.getElementById("longTermCheckbox");
 
         function toggleCompanyVisibility(companyKey, sectionId) {
             appState.visibility[companyKey] = document.getElementById(`toggle${companyKey.charAt(0).toUpperCase() + companyKey.slice(1)}`).checked;
@@ -298,7 +366,13 @@
 
         function toggleAdditionalCitycar() {
             appState.visibility.citycarAdditional = !appState.visibility.citycarAdditional;
-            additionalCarsRow1El.classList.toggle(CLASS_HIDDEN_ROW, !appState.visibility.citycarAdditional);
+            document.querySelectorAll('.additional-car-row').forEach(row => row.classList.toggle(CLASS_HIDDEN_ROW, !appState.visibility.citycarAdditional));
+            calculate();
+        }
+
+        function toggleLongTermColumns() {
+            appState.showLongTerm = longTermCheckboxEl.checked;
+            document.querySelectorAll('.long-term-col').forEach(col => col.classList.toggle(CLASS_HIDDEN_COL, !appState.showLongTerm));
             calculate();
         }
 
@@ -312,6 +386,43 @@
         }
 
         function isSeason() { return seasonCheckboxEl.checked; }
+        function getClubLevel() { return clubLevelEl ? clubLevelEl.value : 'none'; }
+        function isInsurance() { return insuranceCheckboxEl ? insuranceCheckboxEl.checked : false; }
+
+        /**
+         * Season surcharge per unit (hour/day) after the מועדון סגול discount (CityCar only).
+         * @returns {{rate: number, note: string}}
+         */
+        function getSeasonSurcharge(config, baseSurcharge) {
+            const discount = config.company === 'citycar' ? CLUB_SEASON_DISCOUNT[getClubLevel()] : 0;
+            if (!discount) return { rate: baseSurcharge, note: '(עונה)' };
+            return { rate: +(baseSurcharge * (1 - discount)).toFixed(2), note: `(עונה, ${discount * 100}%- מועדון)` };
+        }
+
+        function formatRate(rate) {
+            return (rate % 1 === 0) ? rate.toFixed(0) : parseFloat(rate.toFixed(2)).toString();
+        }
+
+        /**
+         * Calculates a CityCar weekly/monthly package: whole packages (rounded up) + flat km rate,
+         * plus per-day season surcharge and deductible reduction.
+         */
+        function calculatePackageCost(config, pkg, unitDays, unitChar, days, km, seasonActive) {
+            if (!pkg || days <= 0) return { price: "לא זמין", formula: "לא זמין" };
+            const units = Math.ceil(days / unitDays);
+            let price = units * pkg.base + km * pkg.kmRate;
+            let formula = `${units}${unitChar} * ${pkg.base} + ${km}ק"מ * ${formatRate(pkg.kmRate)}`;
+            if (seasonActive && config.seasonSurcharge) {
+                const season = getSeasonSurcharge(config, config.seasonSurcharge);
+                price += days * season.rate;
+                formula += ` + ${days}י * ${formatRate(season.rate)} ${season.note}`;
+            }
+            if (isInsurance() && config.insurance) {
+                price += days * config.insurance.day;
+                formula += ` + ${days}י * ${config.insurance.day} (השתתפות)`;
+            }
+            return { price, formula };
+        }
 
         /**
          * Calculates the cost for a specific car rental option.
@@ -330,7 +441,7 @@
         function calculateCarCosts(config, carId, hours, days, km, seasonActive, promotionActiveForCalc, timeUnitChar, formulaTimeValue, displayedDaysForFormula) {
             let hourly = { price: 0, formula: "" };
             let daily = { price: 0, formula: "" };
-            const kmDetails = config.kmCostFunc ? config.kmCostFunc(config.carType, km) : { cost: km * (config.dailyKmRate || 0), formula: `${km}ק"מ * ${config.dailyKmRate || 0}` };
+            const kmDetails = config.kmCostFunc ? config.kmCostFunc(config.carType, km, config) : { cost: km * (config.dailyKmRate || 0), formula: `${km}ק"מ * ${config.dailyKmRate || 0}` };
 
             if (config.company === 'mitav') {
                 // Mitav logic remains unchanged
@@ -375,8 +486,13 @@
                 }
                 // Apply season surcharge for hourly rate
                 if (seasonActive && hours > 0 && config.seasonHourlySurcharge) {
-                    hourly.price += hours * config.seasonHourlySurcharge;
-                    hourly.formula += ` + ${formulaTimeValue}${timeUnitChar} * ${config.seasonHourlySurcharge} (עונה)`;
+                    const season = getSeasonSurcharge(config, config.seasonHourlySurcharge);
+                    hourly.price += hours * season.rate;
+                    hourly.formula += ` + ${formulaTimeValue}${timeUnitChar} * ${formatRate(season.rate)} ${season.note}`;
+                }
+                if (isInsurance() && hours > 0 && config.insurance) {
+                    hourly.price += hours * config.insurance.hour;
+                    hourly.formula += ` + ${formulaTimeValue}${timeUnitChar} * ${config.insurance.hour} (השתתפות)`;
                 }
             }
 
@@ -418,17 +534,26 @@
 
                 // Apply season surcharge for daily rate
                 if (seasonActive && days > 0 && config.seasonSurcharge) {
-                    daily.price += days * config.seasonSurcharge;
-                    daily.formula += ` + ${days}י * ${config.seasonSurcharge} (עונה)`;
+                    const season = getSeasonSurcharge(config, config.seasonSurcharge);
+                    daily.price += days * season.rate;
+                    daily.formula += ` + ${days}י * ${formatRate(season.rate)} ${season.note}`;
+                }
+                if (isInsurance() && days > 0 && config.insurance) {
+                    daily.price += days * config.insurance.day;
+                    daily.formula += ` + ${days}י * ${config.insurance.day} (השתתפות)`;
                 }
             }
+
+            // Weekly / monthly packages (CityCar)
+            const weekly = calculatePackageCost(config, config.weekly, 7, 'שב', days, km, seasonActive);
+            const monthly = calculatePackageCost(config, config.monthly, 30, 'ח', days, km, seasonActive);
 
             const noTimeInput = (appState.inputMode === 'hours' && hours === 0) || (appState.inputMode === 'days' && days === 0);
              if (noTimeInput && km === 0) {
                  if (hourly.price !== "לא זמין" && hourly.price !== "לא רלוונטי") hourly.price = 0;
                  if (daily.price !== "לא זמין" && daily.price !== "לא רלוונטי") daily.price = 0;
              }
-            return { hourly, daily };
+            return { hourly, daily, weekly, monthly };
         }
 
         function updateElement(elementId, priceData) {
@@ -452,7 +577,7 @@
             }
 
             if (priceDiv) priceDiv.textContent = typeof displayPrice === 'number' ? `${displayPrice.toFixed(2)} ₪` : displayPrice;
-            if (formulaDiv) formulaDiv.textContent = displayFormula;
+            if (formulaDiv) { formulaDiv.textContent = displayFormula; formulaDiv.title = displayFormula; }
         }
 
         function highlightPrices(allPrices) {
@@ -519,6 +644,15 @@
                 if (config.dailyElementId && costs.daily.price !== "לא רלוונטי") {
                     updateElement(config.dailyElementId, costs.daily);
                      allPrices.push({ element: document.getElementById(config.dailyElementId), value: costs.daily.price });
+                }
+                if (config.weekly || config.monthly) {
+                    const weeklyId = carId + '_weekly', monthlyId = carId + '_monthly';
+                    updateElement(weeklyId, costs.weekly);
+                    updateElement(monthlyId, costs.monthly);
+                    if (appState.showLongTerm) {
+                        allPrices.push({ element: document.getElementById(weeklyId), value: costs.weekly.price });
+                        allPrices.push({ element: document.getElementById(monthlyId), value: costs.monthly.price });
+                    }
                 }
             }
             highlightPrices(allPrices);
