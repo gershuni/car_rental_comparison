@@ -72,6 +72,13 @@
                 <div class="note">הטבת מועדון: מחיר מקסימום לק"מ בתעריף השעתי, והנחה על תוספת העונה (מוביל 20%, מאסטר עד 50%)</div>
             </div>
             <div class="option-line">
+                <input type="checkbox" id="upgradeCheckbox" onchange="calculate()">
+                <label for="upgradeCheckbox">שדרוג רכב בסגולים (משלמים על הזמן כמו פיקנטו/ספייס סטאר/i10)</label>
+                <label for="pointsBalance" style="margin-right: 10px;">יתרת סגולים:</label>
+                <input type="number" id="pointsBalance" placeholder="ללא הגבלה" min="0" oninput="calculate()" style="width: 110px; padding: 4px; display: inline-block; margin: 0;">
+                <div class="note">מחיר הק"מ ותוספת העונה נשארים לפי הרכב בפועל. עלות הסגולים מוצגת בנוסחה.</div>
+            </div>
+            <div class="option-line">
                 <input type="checkbox" id="insuranceCheckbox" onchange="calculate()">
                 <label for="insuranceCheckbox">הפחתת השתתפות עצמית ל-300 ₪ (סיטיקאר: 5 ₪ לשעה / 50 ₪ ליום, 7 מקומות: 10/100)</label>
             </div>
@@ -243,6 +250,7 @@
                 seasonSurcharge: 50, seasonHourlySurcharge: 3,
                 insurance: { hour: 5, day: 50 },
                 kmCostFunc: getCityCarKmCostDetails,
+                upgradePoints: { hour: 100, day: 1000, week: 5000, month: 15000 },
                 hourlyElementId: 'citycar_c3_hourly', dailyElementId: 'citycar_c3_daily'
             },
             citycar_p5008: {
@@ -252,6 +260,7 @@
                 seasonSurcharge: 95, seasonHourlySurcharge: 19,
                 insurance: { hour: 10, day: 100 },
                 kmCostFunc: getCityCarKmCostDetails,
+                upgradePoints: { hour: 650, day: 5000, week: 30000, month: 95000 },
                 hourlyElementId: 'citycar_p5008_hourly', dailyElementId: 'citycar_p5008_daily'
             },
             citycar_micra: {
@@ -270,6 +279,7 @@
                 seasonSurcharge: 55, seasonHourlySurcharge: 3,
                 insurance: { hour: 5, day: 50 },
                 kmCostFunc: getCityCarKmCostDetails,
+                upgradePoints: { hour: 0, day: 1000, week: 2500, month: 10000 },
                 hourlyElementId: 'citycar_duster_hourly', dailyElementId: 'citycar_duster_daily'
             },
             citycar_familyplus: {
@@ -279,6 +289,7 @@
                 seasonSurcharge: 85, seasonHourlySurcharge: 6,
                 insurance: { hour: 5, day: 50 },
                 kmCostFunc: getCityCarKmCostDetails,
+                upgradePoints: { hour: 500, day: 3500, week: 20000, month: 50000 },
                 hourlyElementId: 'citycar_familyplus_hourly', dailyElementId: 'citycar_familyplus_daily'
             },
             citycar_sorento: {
@@ -288,6 +299,7 @@
                 seasonSurcharge: 145, seasonHourlySurcharge: 19,
                 insurance: { hour: 10, day: 100 },
                 kmCostFunc: getCityCarKmCostDetails,
+                upgradePoints: { hour: 1050, day: 9000, week: 50000, month: 110000 },
                 hourlyElementId: 'citycar_sorento_hourly', dailyElementId: 'citycar_sorento_daily'
             },
             mycar_small: {
@@ -399,6 +411,36 @@
             return { rate: +(baseSurcharge * (1 - discount)).toFixed(2), note: `(עונה, ${discount * 100}%- מועדון)` };
         }
 
+        // Car whose time prices are paid when upgrading with סגולים (קטן).
+        const UPGRADE_BASE_CAR_ID = 'citycar_picanto';
+
+        function getPointsBalance() {
+            const el = document.getElementById("pointsBalance");
+            const v = el ? parseFloat(el.value) : NaN;
+            return isNaN(v) ? Infinity : v;
+        }
+
+        /**
+         * מועדון סגול upgrade: pay the time price of the base car and spend סגולים per time unit.
+         * @param {string} unit - 'hour' | 'day' | 'week' | 'month'
+         * @param {number} count - number of time units
+         * @returns {{timePrice: number, note: string}|null} null when the upgrade does not apply.
+         */
+        function getUpgrade(config, unit, count) {
+            const upgradeEl = document.getElementById("upgradeCheckbox");
+            if (!upgradeEl || !upgradeEl.checked || !config.upgradePoints || count <= 0) return null;
+            const base = pricingConfig[UPGRADE_BASE_CAR_ID];
+            const timePrice = { hour: base.hourlyRate, day: base.dailyBase, week: base.weekly.base, month: base.monthly.base }[unit];
+            const points = Math.ceil(count * config.upgradePoints[unit]);
+            if (points > getPointsBalance()) return { insufficient: true, points };
+            return { timePrice, points, note: ` (שדרוג: ${points} סגולים)` };
+        }
+
+        function upgradeNote(upgrade) {
+            if (!upgrade) return '';
+            return upgrade.insufficient ? ` (אין מספיק סגולים: ${upgrade.points})` : upgrade.note;
+        }
+
         function formatRate(rate) {
             return (rate % 1 === 0) ? rate.toFixed(0) : parseFloat(rate.toFixed(2)).toString();
         }
@@ -410,8 +452,10 @@
         function calculatePackageCost(config, pkg, unitDays, unitChar, days, km, seasonActive) {
             if (!pkg || days <= 0) return { price: "לא זמין", formula: "לא זמין" };
             const units = Math.ceil(days / unitDays);
-            let price = units * pkg.base + km * pkg.kmRate;
-            let formula = `${units}${unitChar} * ${pkg.base} + ${km}ק"מ * ${formatRate(pkg.kmRate)}`;
+            const upgrade = getUpgrade(config, unitDays === 7 ? 'week' : 'month', units);
+            const timePrice = (upgrade && !upgrade.insufficient) ? upgrade.timePrice : pkg.base;
+            let price = units * timePrice + km * pkg.kmRate;
+            let formula = `${units}${unitChar} * ${timePrice}${upgradeNote(upgrade)} + ${km}ק"מ * ${formatRate(pkg.kmRate)}`;
             if (seasonActive && config.seasonSurcharge) {
                 const season = getSeasonSurcharge(config, config.seasonSurcharge);
                 price += days * season.rate;
@@ -475,8 +519,10 @@
 
             // Hourly Calculation (if applicable)
             if (appState.inputMode === 'hours' && config.hourlyRate !== undefined && !config.isDailyOnly) {
-                hourly.price = hours * config.hourlyRate;
-                hourly.formula = `${formulaTimeValue}${timeUnitChar} * ${config.hourlyRate.toFixed(2)}`;
+                const upgrade = getUpgrade(config, 'hour', hours);
+                const hourlyRate = (upgrade && !upgrade.insufficient) ? upgrade.timePrice : config.hourlyRate;
+                hourly.price = hours * hourlyRate;
+                hourly.formula = `${formulaTimeValue}${timeUnitChar} * ${hourlyRate.toFixed(2)}${upgradeNote(upgrade)}`;
                 if (config.hourlyKmRate) { // Old MyCar style (now unused, but kept for logic safety)
                     hourly.price += km * config.hourlyKmRate;
                     hourly.formula += ` + ${km}ק"מ * ${config.hourlyKmRate.toFixed(1)}`;
@@ -514,11 +560,13 @@
                     daily.formula = `${displayedDaysForFormula}י * ${promoPriceDetails.dailyBase} + ${km}ק"מ * ${kmRateDisplay}`;
                 } else {
                      // Use regular prices
-                    daily.price = days * config.dailyBase;
+                    const upgrade = getUpgrade(config, 'day', days);
+                    const dailyBase = (upgrade && !upgrade.insufficient) ? upgrade.timePrice : config.dailyBase;
+                    daily.price = days * dailyBase;
                     const formulaParts = [];
 
-                    if (config.dailyBase > 0) {
-                        formulaParts.push(`${displayedDaysForFormula}י * ${config.dailyBase}`);
+                    if (dailyBase > 0) {
+                        formulaParts.push(`${displayedDaysForFormula}י * ${dailyBase}${upgradeNote(upgrade)}`);
                     }
 
                     if (config.dailyKmRate) { // MyCar & new CityCar daily style
